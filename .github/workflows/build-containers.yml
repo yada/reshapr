@@ -100,9 +100,9 @@ jobs:
           done
           cosign sign --new-bundle-format=false --use-signing-config=false --yes ${images}
 
-      - name: Sign the gateway image with GitHub OIDC Token
+      - name: Sign the proxy image with GitHub OIDC Token
         env:
-          DIGEST: ${{ steps.build-and-push-gateway.outputs.digest }}
+          DIGEST: ${{ steps.build-and-push-proxy.outputs.digest }}
           TAGS: quay.io/reshapr/reshapr-proxy:${{env.IMAGE_TAG}}
         run: |
           images=""
