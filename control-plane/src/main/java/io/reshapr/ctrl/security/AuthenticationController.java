@@ -22,9 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.security.Authenticated;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -80,6 +83,32 @@ public class AuthenticationController {
    }
 
    @POST
+   @Path("/login/token")
+   @Produces(MediaType.TEXT_PLAIN)
+   @AdminAuthenticated
+   public Response generateLoginToken(DelegatedLoginRequest loginRequest) {
+      logger.infof("Delegated login token requested for user: %s", loginRequest.username);
+
+      // Find user by username.
+      User user = userRepository.findByUsername(loginRequest.username);
+      if (user == null) {
+         logger.warnf("User with username %s not found", loginRequest.username);
+         return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
+      }
+
+      if (user.defaultOrganization == null) {
+         logger.warnf("User %s has no default organization", loginRequest.username);
+         return Response.status(Response.Status.BAD_REQUEST).entity("User has no organization").build();
+      }
+
+      // Generate a JWT token for the user.
+      String token = generateTokenForUser("delegated", user, user.defaultOrganization.name);
+
+      logger.infof("Delegated login token generated for user: %s (org: %s)", user.username, user.defaultOrganization.name);
+      return Response.ok(token).build();
+   }
+
+   @POST
    @Authenticated
    @Path("switchOrganization/{organizationId}")
    public Response switchOrganization(@PathParam("organizationId") String organizationId) {
@@ -104,6 +133,8 @@ public class AuthenticationController {
    }
 
    public record LoginRequest(String username, String password) {}
+
+   public record DelegatedLoginRequest(String username) {}
 
    private String generateTokenForUser(String authorityId, User user, String organizationId) {
       // Generate a Jwt with user information and set is as a cookie.

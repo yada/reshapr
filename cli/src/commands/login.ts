@@ -120,63 +120,109 @@ export const loginCommand = new Command('login')
 
   async function handleSaaSLogin(options: any) {
     // Prepare a token for reception.
-    let token = null;
+    let token: string | null = null;
 
-    // Start starting a lightweight web server to handle OAuth2 login.
+    // Start a lightweight web server to receive the OAuth2 callback.
     const server = http.createServer((req, res) => {
-      // Handle Authentication callback here. Parse the URL.
+      // Parse the URL and extract query parameters.
       const parsedUrl = url.parse(req.url || '', true);
-
-      // Get query parts of the URL.
       const query = parsedUrl.query;
 
-      if (query.token && query.token.length > 0) {
+      if (query.token && (query.token as string).length > 0) {
         token = query.token as string;
+
+        // The SaaS also sends the control plane URL for subsequent CLI calls.
+        const ctrlUrl = (query.ctrl_url as string) || options.server;
 
         Logger.success('Login successful!');
 
-        const tokenPayload = token.split('.')[1];
-        const decodedPayload = Buffer.from(tokenPayload, 'base64').toString('utf8');
-        const username = JSON.parse(decodedPayload).sub || 'unknown';
+        // Decode the JWT payload to extract username and org.
+        try {
+          const tokenPayload = token.split('.')[1];
+          const decodedPayload = Buffer.from(tokenPayload, 'base64').toString('utf8');
+          const payload = JSON.parse(decodedPayload);
+          const username = payload.sub || 'unknown';
+          const org = payload.org || '';
 
-        Logger.info(`Welcome, ${username}!`);
-        // Here you would typically save the authentication token or session.
-        let config = {
-          username: username,
-          server: options.server,
-          insecure: options.insecure,
-          token: token
-        };
-        ConfigUtil.writeConfig(config);
+          Logger.info(`Welcome, ${username}!`);
+          if (org) {
+            Logger.info(`Organization: ${org}`);
+          }
 
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('Login successful! You can close this window now.');
+          // Save the configuration — server points to the control plane, not the SaaS.
+          const config = {
+            username: username,
+            server: ctrlUrl,
+            insecure: options.insecure,
+            token: token
+          };
+          ConfigUtil.writeConfig(config);
+        } catch (err) {
+          Logger.warn('Could not decode token payload: ' + err);
+          // Still save the config with what we have.
+          const config = {
+            username: 'unknown',
+            server: ctrlUrl,
+            insecure: options.insecure,
+            token: token
+          };
+          ConfigUtil.writeConfig(config);
+        }
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(`
+          <html>
+            <head><meta charset="utf-8"></head>
+            <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
+              <div style="text-align: center;">
+                <h1 style="color: #16a34a;">&#10003; Login successful!</h1>
+                <p style="color: #64748b;">You can close this window and return to your terminal.</p>
+              </div>
+            </body>
+          </html>
+        `);
+
+        // Close the server and exit after a short delay.
+        setTimeout(() => {
+          server.close();
+          process.exit(0);
+        }, 500);
       } else {
-        Logger.error('Login failed: No token received.');
-        res.writeHead(400, { 'Content-Type': 'text/plain' });
-        res.end(`Login failed: No token received. Please login on ${options.server} before trying again.`);
+        // We may receive other requests to this server that don't have a token, so just respond with an error page.
+        if (!token) {
+          Logger.error('Login failed: No token received.');
+          res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(`
+            <html>
+              <head><meta charset="utf-8"></head>
+              <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
+                <div style="text-align: center;">
+                  <h1 style="color: #dc2626;">&#10007; Login failed</h1>
+                  <p style="color: #64748b;">No token received. Please try again.</p>
+                </div>
+              </body>
+            </html>
+          `);
+        }
       }
-
-      process.exit(0);
     });
+
     server.on('error', (err: any) => {
-      Logger.error('Failed to start server for OAuth2 login: ' + err.message);
+      Logger.error('Failed to start local server for authentication: ' + err.message);
       process.exit(1);
     });
 
-
-    const localPort = await getPort({port: portNumbers(5556, 5599)});
+    // Find an available port.
+    const localPort = await getPort({ port: portNumbers(5556, 5599) });
 
     server.listen(localPort, () => {
-      Logger.info(`Listening for OAuth2 callback on http://localhost:${localPort}`);
+      Logger.info(`Listening for authentication callback on http://localhost:${localPort}`);
     });
+
+    // Open the browser to the SaaS CLI login page.
+    const loginUrl = `${options.server}/cli/login?redirect_uri=http://localhost:${localPort}`;
+    Logger.info(`Opening browser: ${loginUrl}`);
 
     // Opens the URL in the default browser.
-    await open(`${options.server}/auth/login/saas?redirect_uri=http://localhost:${localPort}`, {
-      wait: true
-    });
-
-    server.close(() => {
-      Logger.info('Server closed after handling OAuth2 callback.');
-    });
+    await open(loginUrl, { wait: false });
   }

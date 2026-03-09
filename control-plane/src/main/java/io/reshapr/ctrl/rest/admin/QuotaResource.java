@@ -67,7 +67,7 @@ public class QuotaResource {
       }
 
       // List quotas for the organization.
-      List<Quota> quotas = Quota.list("organizationId", Sort.ascending("metric"), organization.id);
+      List<Quota> quotas = Quota.list("organizationId", Sort.ascending("metric"), organizationName);
       return Response.status(Response.Status.OK).entity(quotas).build();
    }
 

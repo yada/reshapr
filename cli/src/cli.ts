@@ -17,7 +17,7 @@
 
 import { program } from 'commander';
 import * as yaml from 'js-yaml';
-import { loginCommand, infoCommand, logoutCommand, importCommand, attachCommand, quotasCommand } from './commands/index.js';
+import { loginCommand, infoCommand, logoutCommand, importCommand, attachCommand, quotasCommand, trialLoginCommand } from './commands/index.js';
 import { ConfigUtil } from './utils/config.js';
 import { Logger } from './utils/logger.js';
 import { Context } from './utils/context.js';
@@ -30,7 +30,7 @@ program
   .version(CLI_VERSION)
   .hook('preAction', (thisCommand, actionCommand) => {
     ConfigUtil.readConfig();
-    if (actionCommand.name() != 'login' && actionCommand.name() != 'logout') {
+    if (actionCommand.name() != 'login' && actionCommand.name() != 'logout' && actionCommand.name() != 'trial-login') {
       if (!ConfigUtil.config.token) {
         Logger.warn(`You are not logged in. Please login first using the \`${CLI_NAME} login\` command.`);
         process.exit(1);
@@ -95,6 +95,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Load commands.
 program.addCommand(loginCommand);
+program.addCommand(trialLoginCommand);
 program.addCommand(infoCommand);
 program.addCommand(logoutCommand);
 program.addCommand(importCommand);
