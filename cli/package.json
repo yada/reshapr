@@ -7,6 +7,10 @@
   "bin": {
     "reshapr": "dist/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reshaprio/reshapr.git"
+  },
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
