@@ -1,0 +1,64 @@
+project:
+  name: Reshapr
+  description: Reshapr core project
+  copyright: The Reshapr Authors
+  java:
+    version: '25'
+
+signing:
+  active: ALWAYS
+  armored: true
+
+assemble:
+  archive:
+    reshapr:
+      active: ALWAYS
+      stereotype: NONE
+      options:
+        longFileMode: POSIX
+      formats:
+        - ZIP
+        - TGZ
+      fileSets:
+        - input: target/staging-deploy
+          includes:
+            - '**/*.*'
+
+files:
+  active: ALWAYS
+  artifacts:
+    - path: 'target/site/reshapr-parent-{{projectVersion}}.spdx-sbom.json'
+    - path: 'api/target/site/reshapr-api-{{projectVersion}}.spdx-sbom.json'
+    - path: 'commons/util/target/site/reshapr-commons-{{projectVersion}}.spdx-sbom.json'
+    - path: 'control-plane/target/site/reshapr-ctrl-{{projectVersion}}.spdx-sbom.json'
+    - path: 'proxy/target/site/reshapr-{{projectVersion}}.spdx-sbom.json'
+    - path: 'cli/reshapr-reshapr-cli-{{projectVersion}}.spdx-sbom.json'
+    - path: 'cli/reshapr-reshapr-cli-{{projectVersion}}.tgz'
+
+deploy:
+  maven:
+    mavenCentral:
+      sonatype:
+        active: ALWAYS
+        snapshotSupported: false
+        url: https://central.sonatype.com/api/v1/publisher
+        username: wPlqdV4c
+        namespace: io.reshapr
+        applyMavenCentralRules: true
+        stagingRepositories:
+          - target/staging-deploy
+    pomchecker:
+      failOnWarning: false
+      failOnError: false
+      strict: false
+
+release:
+  github:
+    overwrite: true
+    releaseName: '{{tagName}}'
+    tagName: '{{projectVersion}}'
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
