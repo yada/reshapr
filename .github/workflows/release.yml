@@ -78,16 +78,16 @@ jobs:
         if: ${{ github.event.inputs.deployNPMActive == 'ALWAYS' }}
         run: |
           cd cli
-          npm sbom --sbom-format spdx > reshapr-cli-${{ github.event.inputs.version }}.spdx-sbom.json
+          npm sbom --sbom-format spdx > reshapr-reshapr-cli-${{ github.event.inputs.version }}.spdx-sbom.json
           npm run build
           npm publish --provenance
           npm pack
 
       - name: Genenate NPM SBOM and package at least for GitHub release
-        if: ${{ github.event.inputs.deployNPMActive == 'NEVER' }}
+        if: ${{ github.event.inputs.deployNPMActive != 'ALWAYS' }}
         run: |
           cd cli
-          npm sbom --sbom-format spdx > reshapr-cli-${{ github.event.inputs.version }}.spdx-sbom.json
+          npm sbom --sbom-format spdx > reshapr-reshapr-cli-${{ github.event.inputs.version }}.spdx-sbom.json
           npm run build
           npm pack
 
