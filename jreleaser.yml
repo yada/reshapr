@@ -29,7 +29,7 @@ files:
   artifacts:
     - path: 'target/site/reshapr-parent-{{projectVersion}}.spdx-sbom.json'
     - path: 'api/target/site/reshapr-api-{{projectVersion}}.spdx-sbom.json'
-    - path: 'commons/util/target/site/reshapr-commons-{{projectVersion}}.spdx-sbom.json'
+    - path: 'commons/target/site/reshapr-commons-{{projectVersion}}.spdx-sbom.json'
     - path: 'control-plane/target/site/reshapr-ctrl-{{projectVersion}}.spdx-sbom.json'
     - path: 'proxy/target/site/reshapr-{{projectVersion}}.spdx-sbom.json'
     - path: 'cli/reshapr-reshapr-cli-{{projectVersion}}.spdx-sbom.json'
