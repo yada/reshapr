@@ -153,6 +153,40 @@ public class UserResource {
    }
 
    @PUT
+   @Path("/{username}/organization/{organizationName}/owner")
+   @Transactional
+   public Response updateOrganizationOwner(@PathParam("username") String username, @PathParam("organizationName") String organizationName) {
+      logger.infof("Updating organization owner for organization %s to user %s", organizationName, username);
+
+      // Find user by username.
+      User user = userRepository.findByUsername(username);
+      if (user == null) {
+         logger.warnf("User with username %s not found", username);
+         return Response.status(Response.Status.NOT_FOUND.getStatusCode(), "User not found").build();
+      }
+
+      // Find organization by name.
+      Organization organization = organizationRepository.findByName(organizationName);
+      if (organization == null) {
+         logger.warnf("Organization with name %s not found", organizationName);
+         return Response.status(Response.Status.NOT_FOUND.getStatusCode(), "Organization not found").build();
+      }
+
+      // Update and persist user and organization.
+      organization.owner = user;
+      organizationRepository.persistAndFlush(organization);
+
+      // Assign organization to user.
+      user.organizations.add(organization);
+      if (user.defaultOrganization == null) {
+         user.defaultOrganization = organization;
+      }
+      userRepository.persistAndFlush(user);
+
+      return Response.ok(new OrganizationDTO(organizationName, organization.description, organization.icon)).build();
+   }
+
+   @PUT
    @Path("/{username}/memberships")
    @Transactional
    public Response assignMembership(@PathParam("username") String username, List<String> organisationIds) {
