@@ -66,6 +66,7 @@ jobs:
           cd cli
           npm install
           npm version ${{ github.event.inputs.version }} --git-tag-version=false
+          npm run build
 
       - name: Commit, push and tag changes
         run: |
@@ -83,7 +84,6 @@ jobs:
         run: |
           cd cli
           npm sbom --sbom-format spdx > reshapr-reshapr-cli-${{ github.event.inputs.version }}.spdx-sbom.json
-          npm run build
           npm publish --provenance
           npm pack
 
@@ -92,7 +92,6 @@ jobs:
         run: |
           cd cli
           npm sbom --sbom-format spdx > reshapr-reshapr-cli-${{ github.event.inputs.version }}.spdx-sbom.json
-          npm run build
           npm pack
 
       - name: Publish package with JReleaser
