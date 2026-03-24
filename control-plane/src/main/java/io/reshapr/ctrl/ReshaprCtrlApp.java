@@ -142,21 +142,25 @@ public class ReshaprCtrlApp {
          int i = 1;
          for (String token : defaultGatewayTokens.get()) {
             if (token != null && !token.isBlank()) {
+               String tokenName = "default-gateway-token-" + i++;
                // Check token existence and create it if it doesn't exist.
-               ApiToken apiToken = apiTokenRepository.findByToken(token);
+               ApiToken apiToken = apiTokenRepository.findByNameAndOrganizationId(tokenName, ROOT_TENANT_ID);
                if (apiToken == null) {
-                  logger.debugf("Default gateway token '%s' doesn't exists. Create it.", token);
-
+                  logger.debugf("Default gateway token '%s' doesn't exists. Create it.", tokenName);
                   apiToken = new ApiToken();
-                  apiToken.name = "default-gateway-token-" + i++;
+                  apiToken.name = tokenName;
                   apiToken.token = token;
                   apiToken.organizationId = ROOT_TENANT_ID;
                   apiToken.validUntil = LocalDateTime.parse("2027-12-24 23:59:59", formatter);
                   if (admin != null) {
                      apiToken.user = admin;
                   }
-                  apiTokenRepository.persist(apiToken);
+               } else {
+                  logger.warnf("Default gateway token '%s' already exists. Update it.", tokenName);
+                  logger.warnf("Be sure to update the configuration of the proxies that use it.");
+                  apiToken.token = token;
                }
+               apiTokenRepository.persist(apiToken);
             }
          }
       } else {

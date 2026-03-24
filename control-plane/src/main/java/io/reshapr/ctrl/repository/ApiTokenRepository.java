@@ -33,6 +33,10 @@ public class ApiTokenRepository implements PanacheRepositoryBase<ApiToken, Strin
       return find("token", token).firstResult();
    }
 
+   public ApiToken findByNameAndOrganizationId(String name, String organizationId) {
+      return find("name = ?1 and organizationId = ?2", name, organizationId).firstResult();
+   }
+
    public List<ApiToken> findByOrganizationId(String organizationId) {
       return find("from ApiToken t left join fetch t.user where organizationId = ?1", organizationId).list();
    }
