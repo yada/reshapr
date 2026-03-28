@@ -89,7 +89,7 @@ public class ReshaprGatewayApp {
    List<String> fqdns;
 
    Cancellable expositionChangesSubscription;
-
+   boolean hasConnectedToControlPlane = false;
 
    /**
     *
@@ -128,6 +128,7 @@ public class ReshaprGatewayApp {
                   propagateExpositionChangeEvent(changeEvent);
                }, failure -> logger.errorf("Failed to stream exposition changes: %s", failure.getMessage()));
 
+         hasConnectedToControlPlane = true;
          logger.infof("Startup completed with %d expositions registered. Now listening for changes.", discoveryResponse.getExpositionsCount());
       } catch (Throwable t) {
          logger.error("Failed to fetch expositions during startup", t);
@@ -144,6 +145,11 @@ public class ReshaprGatewayApp {
       }
    }
 
+   /** Check if the gateway has successfully connected to the control plane at least once. */
+   public boolean hasConnectedToControlPlane() {
+      return hasConnectedToControlPlane;
+   }
+
    /** Build the exposition discovery request. */
    public ExpositionDiscoveryRequest buildDiscoveryRequest() {
       return ExpositionDiscoveryRequest.newBuilder()
@@ -153,12 +159,14 @@ public class ReshaprGatewayApp {
             .build();
    }
 
-   /** */
+   /** Register again within the control plane and re-discover expositions. */
    public ExpositionDiscoveryResponse registerAndDiscoverExpositions() {
       ExpositionDiscoveryRequest discoveryRequest = buildDiscoveryRequest();
 
       ExpositionDiscoveryResponse discoveryResponse = discoveryService.discoverExpositions(discoveryRequest);
       logger.infof("Fetched %d expositions during registration", discoveryResponse.getExpositionsCount());
+      hasConnectedToControlPlane = true;
+
       discoveryResponse.getExpositionsList().forEach(this::fetchExposition);
       return discoveryResponse;
    }

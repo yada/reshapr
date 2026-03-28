@@ -52,8 +52,10 @@ public class HealthAdvertiser {
    /***
     *
     * @param healthService
+    * @param reshaprGatewayApp
     */
-   public HealthAdvertiser(@RegisterClientInterceptor(GrpcAuthClientInterceptor.class) @GrpcClient("gateway-health") GatewayHealthServiceGrpc.GatewayHealthServiceBlockingStub healthService, ReshaprGatewayApp reshaprGatewayApp) {
+   public HealthAdvertiser(@RegisterClientInterceptor(GrpcAuthClientInterceptor.class) @GrpcClient("gateway-health") GatewayHealthServiceGrpc.GatewayHealthServiceBlockingStub healthService,
+                           ReshaprGatewayApp reshaprGatewayApp) {
       this.healthService = healthService;
       this.reshaprGatewayApp = reshaprGatewayApp;
    }
