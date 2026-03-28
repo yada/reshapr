@@ -28,11 +28,29 @@ export const loginCommand = new Command('login')
   .description(`Login to ${CLI_LABEL}`)
   .option('-u, --username <username>', `Your ${CLI_LABEL} username`)
   .option('-p, --password <password>', `Your ${CLI_LABEL} password`)
-  .option('-t, --token <token>', `Your ${CLI_LABEL} authentication token`)
   .option('-o, --org <org>', `Your ${CLI_LABEL} organization name`)
-  .option('-s, --server <server>', `Your ${CLI_LABEL} Control Plane URL`, 'https://app.resphar.io')
+  .option('-s, --server <server>', `Your ${CLI_LABEL} Control Plane URL`, 'https://try.reshapr.io')
   .option('-k, --insecure', 'Skip SSL certificate validation')
+  .option('--password-stdin', 'Read password from stdin')
   .action(async (options) => {
+    // Validate that --password and --password-stdin are not both provided.
+    if (options.password && options.passwordStdin) {
+      Logger.error('--password and --password-stdin are mutually exclusive.');
+      process.exit(1);
+    }
+
+    // If --password-stdin is set, read the password from stdin.
+    if (options.passwordStdin) {
+      if (process.stdin.isTTY) {
+        Logger.error('Error: --password-stdin requires piped input (e.g. echo "password" | reshapr login --password-stdin -u user)');
+        process.exit(1);
+      }
+      options.password = await readFromStdin();
+      if (!options.password) {
+        Logger.error('Error: password is empty when reading from stdin.');
+        process.exit(1);
+      }
+    }
     // First validate server URL and fetch server configuration.
     const configResponse = await fetch(`${options.server}/api/config`, {
       method: 'GET'
@@ -53,6 +71,16 @@ export const loginCommand = new Command('login')
       await handleSaaSLogin(options);
     }
   });
+
+  function readFromStdin(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      let data = '';
+      process.stdin.setEncoding('utf8');
+      process.stdin.on('data', (chunk) => { data += chunk; });
+      process.stdin.on('end', () => { resolve(data.trim()); });
+      process.stdin.on('error', (err) => { reject(err); });
+    });
+  }
 
   async function handleOnPremisesLogin(options: any) {
     // Handle on-premises login logic here if needed.
