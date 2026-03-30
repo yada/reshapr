@@ -15,7 +15,7 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
 
   control-plane:
-    image: quay.io/reshapr/reshapr-ctrl:nightly
+    image: registry.reshapr.io/reshapr/reshapr-ctrl:nightly
     container_name: reshapr-control-plane
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -43,7 +43,7 @@ services:
       retries: 3
 
   gateway-01:
-    image: quay.io/reshapr/reshapr-proxy:nightly
+    image: registry.reshapr.io/reshapr/reshapr-proxy:nightly
     container_name: reshapr-gateway-01
     extra_hosts:
       - "host.docker.internal:host-gateway"
