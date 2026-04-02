@@ -15,7 +15,13 @@
  */
 package io.reshapr.ctrl.rest.admin;
 
+import io.reshapr.json.HtmlEncodedStringDeserializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 /**
  * Data Transfer Object for Organization information.
@@ -25,7 +31,12 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  */
 @RegisterForReflection
 public record OrganizationDTO(
+      @NotBlank(message = "Organization name must not be blank")
+      @Size(min = 1, max = 100, message = "Organization name must be between 1 and 100 characters")
+      @Pattern(regexp = "[a-zA-Z0-9_]+", message = "Organization name must only contain alphanumeric characters and underscores")
       String name,
+      @Size(max = 255, message = "Description must not exceed 255 characters")
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String description,
       String icon
 ) {

@@ -15,7 +15,11 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
+import io.reshapr.json.HtmlEncodedStringDeserializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -28,7 +32,11 @@ public class ConfigurationPlanDTO {
 
    protected String id;
    protected String organizationId;
+   @Size(max = 255, message = "Name must not exceed 255 characters")
+   @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
    protected String name;
+   @Size(max = 255, message = "Description must not exceed 255 characters")
+   @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
    protected String description;
    protected String serviceId;
    protected String backendEndpoint;

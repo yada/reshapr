@@ -15,8 +15,13 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.reshapr.ctrl.model.SecretType;
+import io.reshapr.json.HtmlEncodedStringDeserializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 
 /**
  * A record representing a secret in the Reshapr REST API v1.
@@ -35,14 +40,23 @@ import io.reshapr.ctrl.model.SecretType;
 public record SecretDTO(
       String id,
       String organizationId,
+      @Size(max = 255, message = "Name must not exceed 255 characters")
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String name,
+      @Size(max = 255, message = "Description must not exceed 255 characters")
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String description,
       SecretType type,
+      @Size(max = 255, message = "Username must not exceed 255 characters")
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String username,
+      @Size(max = 255, message = "Password must not exceed 255 characters")
       String password,
       String token,
+      @Size(max = 255, message = "Token header must not exceed 255 characters")
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String tokenHeader,
       String certPem,
       boolean useElicitation,
-      OAuth2ClientConfigurationDTO oauth2ClientConfiguration) {
+      @Valid OAuth2ClientConfigurationDTO oauth2ClientConfiguration) {
 }

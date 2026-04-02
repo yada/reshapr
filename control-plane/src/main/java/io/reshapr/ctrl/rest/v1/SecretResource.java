@@ -22,6 +22,7 @@ import io.reshapr.ctrl.model.Secret;
 import io.reshapr.ctrl.repository.SecretRepository;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -77,7 +78,7 @@ public class SecretResource {
    @Authenticated
    @Transactional
    @Produces(MediaType.APPLICATION_JSON)
-   public Response createSecret(SecretDTO secretDTO) {
+   public Response createSecret(@Valid SecretDTO secretDTO) {
       logger.debugf("Creating new secret with name %s", secretDTO.name());
       Secret secret = v1Mappers.fromResource(secretDTO);
       secretRepository.persistAndFlush(secret);
@@ -102,7 +103,7 @@ public class SecretResource {
    @Transactional
    @Path("/{id}")
    @Produces(MediaType.APPLICATION_JSON)
-   public Response updateSecret(String id, SecretDTO secretDTO) {
+   public Response updateSecret(String id, @Valid SecretDTO secretDTO) {
       logger.debugf("Updating secret with id %s", id);
       Secret secret = secretRepository.findById(id);
       if (secret == null) {

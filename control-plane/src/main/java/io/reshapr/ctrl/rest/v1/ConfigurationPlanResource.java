@@ -22,6 +22,7 @@ import io.reshapr.ctrl.service.ConfigurationPlanManagerService;
 import io.reshapr.ctrl.service.DependencyNotFoundException;
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -66,7 +67,7 @@ public class ConfigurationPlanResource {
 
    @POST
    @Authenticated
-   public Response createConfigurationPlan(ConfigurationPlanDTO configurationPlanDTO) {
+   public Response createConfigurationPlan(@Valid ConfigurationPlanDTO configurationPlanDTO) {
       logger.infof("Creating a new configuration plan named '%s' for service with id %s", configurationPlanDTO.name, configurationPlanDTO.serviceId);
 
       ConfigurationPlan configurationPlan = v1Mappers.fromResource(configurationPlanDTO);
@@ -106,7 +107,7 @@ public class ConfigurationPlanResource {
    @Authenticated
    @Path("/{id}")
    @Produces(MediaType.APPLICATION_JSON)
-   public Response updateConfigurationPlan(@PathParam("id") String id, ConfigurationPlanDTO configurationPlanDTO) {
+   public Response updateConfigurationPlan(@PathParam("id") String id, @Valid ConfigurationPlanDTO configurationPlanDTO) {
       logger.debugf("Updating configuration plan with id %s", id);
 
       ConfigurationPlan configurationPlan = configurationPlanRepository.findById(id);

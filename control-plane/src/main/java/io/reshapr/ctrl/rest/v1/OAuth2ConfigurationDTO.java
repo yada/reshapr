@@ -15,6 +15,8 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
+import io.reshapr.validation.HttpUrl;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.List;
@@ -28,7 +30,8 @@ import java.util.List;
  */
 @RegisterForReflection
 public record OAuth2ConfigurationDTO(
-      List<String> authorizationServers,
+      List<@HttpUrl(message = "Authorization server must be a valid HTTP(S) URL") String> authorizationServers,
+      @HttpUrl(message = "JWKS URI endpoint must be a valid HTTP(S) URL")
       String jwksUri,
       List<String> scopes
 ) {

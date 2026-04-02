@@ -28,6 +28,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -90,7 +91,7 @@ public class GatewayGroupResource {
    @Transactional
    @QuotaRestricted(metric = QuotaMetric.GATEWAY_GROUP_COUNT)
    @Produces(MediaType.APPLICATION_JSON)
-   public Response createGatewayGroup(GatewayGroupDTO gatewayGroupDTO) {
+   public Response createGatewayGroup(@Valid GatewayGroupDTO gatewayGroupDTO) {
       logger.debugf("Creating new GatewayGroup with name %s", gatewayGroupDTO.name());
 
       if (securityIdentity == null) {
@@ -112,7 +113,7 @@ public class GatewayGroupResource {
    @Transactional
    @Path("/{id}")
    @Produces(MediaType.APPLICATION_JSON)
-   public Response updateGatewayGroup(@PathParam("id") String id,  GatewayGroupDTO gatewayGroupDTO) {
+   public Response updateGatewayGroup(@PathParam("id") String id,  @Valid GatewayGroupDTO gatewayGroupDTO) {
       logger.debugf("Updating GatewayGroup with id %s", id);
       GatewayGroup gatewayGroup = gatewayGroupRepository.findById(id);
       if (gatewayGroup == null) {

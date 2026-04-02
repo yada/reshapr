@@ -15,7 +15,11 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
+import io.reshapr.json.HtmlEncodedStringDeserializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.validation.constraints.Size;
 
 import java.util.Map;
 
@@ -31,6 +35,8 @@ import java.util.Map;
 public record GatewayGroupDTO(
       String id,
       String organizationId,
+      @Size(max = 255, message = "Name must not exceed 255 characters")
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String name,
       Map<String, String> labels) {
 }

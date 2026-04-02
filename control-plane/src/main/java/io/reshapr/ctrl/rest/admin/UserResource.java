@@ -25,6 +25,7 @@ import io.reshapr.ctrl.security.AdminAuthenticated;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -89,7 +90,7 @@ public class UserResource {
    @POST
    @Path("/{username}/organization")
    @Transactional
-   public Response createOrganization(@PathParam("username") String username, OrganizationDTO organizationDTO) {
+   public Response createOrganization(@PathParam("username") String username, @Valid OrganizationDTO organizationDTO) {
       logger.infof("Creating organization %s for user %s", organizationDTO.name(), username);
 
       // Find user by username.
@@ -126,7 +127,7 @@ public class UserResource {
    @Path("/{username}/organization/{organizationName}")
    @Transactional
    public Response updateOrganization(@PathParam("username") String username, @PathParam("organizationName") String organizationName,
-                                      OrganizationDTO organizationDTO) {
+                                      @Valid OrganizationDTO organizationDTO) {
       logger.infof("Updating organization %s for user %s", organizationName, username);
 
       // Find user by username.

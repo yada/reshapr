@@ -15,6 +15,10 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
+import io.reshapr.validation.HttpUrl;
+import io.reshapr.json.HtmlEncodedStringDeserializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
@@ -26,7 +30,10 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  */
 @RegisterForReflection
 public record OAuth2ClientConfigurationDTO(
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String clientId,
+      @HttpUrl(message = "Authorization endpoint must be a valid HTTP(S) URL")
       String authorizationEndpoint,
+      @HttpUrl(message = "Token endpoint must be a valid HTTP(S) URL")
       String tokenEndpoint) {
 }

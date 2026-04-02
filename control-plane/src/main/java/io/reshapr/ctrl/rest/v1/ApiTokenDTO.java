@@ -15,7 +15,11 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
+import io.reshapr.json.HtmlEncodedStringDeserializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -28,6 +32,8 @@ public class ApiTokenDTO {
 
    protected String id;
    protected String organizationId;
+   @Size(max = 255, message = "Name must not exceed 255 characters")
+   @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
    protected String name;
    // Should only be set after creation of the token.
    protected String token;
