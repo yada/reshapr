@@ -180,8 +180,8 @@ public class ReshaprCustomToolsMcpToolConverter extends McpToolConverter {
 
    /** Retrieve the `customTools` node of a CustomTools kind yaml attachment. */
    private @Nullable JsonNode getCustomToolsNode() {
-      String key = CACHE_KEYS_PREFIX + service.hashCode();
-      if (workCache.get(key) instanceof JsonNode customToolsNode) {
+      String major = String.valueOf(service.hashCode());
+      if (workCache.get(major, CACHE_KEYS_PREFIX) instanceof JsonNode customToolsNode) {
          logger.tracef("Got a cached value of CustomTools JsonNode for service '%s'", service.id());
          return customToolsNode;
       }
@@ -205,7 +205,7 @@ public class ReshaprCustomToolsMcpToolConverter extends McpToolConverter {
          JsonNode artifactNode = YAML_MAPPER.readTree(customToolsArtifact.get().content());
          JsonNode promptsNode = artifactNode.get("customTools");
 
-         workCache.set(key, promptsNode);
+         workCache.set(major, CACHE_KEYS_PREFIX, promptsNode);
          return promptsNode;
       } catch (Exception e) {
          logger.errorf(e, "Cannot read Reshapr Prompts artifact for service '%s'", service.id());
@@ -220,8 +220,9 @@ public class ReshaprCustomToolsMcpToolConverter extends McpToolConverter {
 
    /** Within a CustomTools attachment, retrieve the `arguments` node within a tool. */
    protected Map<String, Object> getCustomToolTargetArguments(OperationEntry operation, JsonNode customToolNode) {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-" + operation.name();
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + operation.name();
+      Object value = workCache.get(major, minor);
       if (value instanceof Map<?, ?> toolTargetArguments) {
          logger.tracef("Got a cached value of CustomTool target arguments for service '%s' and operation '%s'", service.id(), operation.name());
          return (Map<String, Object>) toolTargetArguments;
@@ -232,7 +233,7 @@ public class ReshaprCustomToolsMcpToolConverter extends McpToolConverter {
 
       Map<String, Object> arguments = YAML_MAPPER.convertValue(customToolNode.get("arguments"),
             new TypeReference<HashMap<String, Object>>() {});
-      workCache.set(key, arguments);
+      workCache.set(major, minor, arguments);
       return arguments;
    }
 

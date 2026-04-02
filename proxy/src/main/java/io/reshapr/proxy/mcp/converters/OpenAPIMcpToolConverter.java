@@ -205,8 +205,9 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
 
    /** Get the root schema node for the OpenAPI artifact. */
    private JsonNode getSchemaNode() throws Exception {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-schema";
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + "schema";
+      Object value = workCache.get(major, minor);
       if (value instanceof JsonNode schemaNode) {
          logger.tracef("Got a cached value of SchemaNode for service '%s'", service.id());
          return schemaNode;
@@ -215,7 +216,7 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
       // Compute new value to cache.
       logger.debugf("Need to build the SchemaNode for service '%s'", service.id());
       JsonNode schemaNode = OpenAPISchemaValidator.getJsonNodeForSchema(artifact.content());
-      workCache.set(key, schemaNode);
+      workCache.set(major, minor, schemaNode);
       return schemaNode;
    }
 
@@ -236,8 +237,9 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
 
    /** */
    private ObjectNode getInputSchemaNode(OperationEntry operation) {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-" + operation.hashCode() + "-schema";
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + operation.hashCode() + "-schema";
+      Object value = workCache.get(major, minor);
       if (value instanceof ObjectNode inputSchemaNode) {
          logger.tracef("Got a cached value of InputSchemaNode for service '%s' and operation '%s'", service.id(), operation.name());
          return inputSchemaNode;
@@ -291,7 +293,7 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
       } catch (Exception e) {
          logger.error("Exception while trying to get input schema", e);
       }
-      workCache.set(key, inputSchemaNode);
+      workCache.set(major, minor, inputSchemaNode);
       return inputSchemaNode;
    }
 

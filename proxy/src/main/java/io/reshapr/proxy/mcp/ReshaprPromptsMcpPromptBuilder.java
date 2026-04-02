@@ -43,7 +43,7 @@ class ReshaprPromptsMcpPromptBuilder implements McpPromptBuilder {
    /** Get a JBoss logging logger. */
    private final Logger logger = Logger.getLogger(getClass());
 
-   private static final String CACHE_KEYS_PREFIX = "mpmcppb-";
+   private static final String CACHE_KEYS_PREFIX = "rpmcppb-";
 
    private static final ObjectMapper YAML_MAPPER = ObjectMapperFactory.getYamlObjectMapper();
    private static final String ARGUMENT_START_MARKER = "${";
@@ -123,8 +123,8 @@ class ReshaprPromptsMcpPromptBuilder implements McpPromptBuilder {
 
    /** Get the root JsonNode containing prompts definitions, using cache when possible. */
    private @Nullable JsonNode getPromptsNode() {
-      String key = CACHE_KEYS_PREFIX + service.hashCode();
-      if (workCache.get(key) instanceof JsonNode promptsNode) {
+      String major = String.valueOf(service.hashCode());
+      if (workCache.get(major, CACHE_KEYS_PREFIX) instanceof JsonNode promptsNode) {
          logger.tracef("Got a cached value of Prompts JsonNode for service '%s'", service.id());
          return promptsNode;
       }
@@ -148,7 +148,7 @@ class ReshaprPromptsMcpPromptBuilder implements McpPromptBuilder {
          JsonNode artifactNode = YAML_MAPPER.readTree(promptsArtifact.get().content());
          JsonNode promptsNode = artifactNode.get("prompts");
 
-         workCache.set(key, promptsNode);
+         workCache.set(major, CACHE_KEYS_PREFIX, promptsNode);
          return promptsNode;
       } catch (Exception e) {
          logger.errorf(e, "Cannot read Reshapr Prompts artifact for service '%s'", service.id());

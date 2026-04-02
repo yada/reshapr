@@ -131,8 +131,9 @@ public class GrpcMcpToolConverter extends McpToolConverter {
 
    /** */
    private Descriptors.ServiceDescriptor getServiceDescriptor() {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-sd";
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + "sd";
+      Object value = workCache.get(major, minor);
       if (value instanceof Descriptors.ServiceDescriptor serviceDescriptor) {
          logger.debugf("Got a cached value of ServiceDescriptor for service '%s'", service.id());
          return serviceDescriptor;
@@ -143,7 +144,7 @@ public class GrpcMcpToolConverter extends McpToolConverter {
       Descriptors.ServiceDescriptor sd = null;
       try {
          sd = GrpcUtil.findServiceDescriptor(artifact.content(), service.name());
-         workCache.set(key, sd);
+         workCache.set(major, minor, sd);
       } catch (Exception e) {
          logger.errorf("Exception while trying to get service descriptor for service '%s'", service.id(), e);
       }
@@ -152,8 +153,9 @@ public class GrpcMcpToolConverter extends McpToolConverter {
 
    /** */
    private ObjectNode getInputSchemaNode(OperationEntry operation) {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-" + operation.hashCode() + "-schema";
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + operation.hashCode() + "-schema";
+      Object value = workCache.get(major, minor);
       if (value instanceof ObjectNode inputSchemaNode) {
          logger.debugf("Got a cached value of InputSchemaNode for service '%s' and operation '%s'", service.id(), operation.name());
          return inputSchemaNode;
@@ -183,7 +185,7 @@ public class GrpcMcpToolConverter extends McpToolConverter {
       } catch (Exception e) {
          logger.error("Exception while trying to get input schema", e);
       }
-      workCache.set(key, inputSchemaNode);
+      workCache.set(major, minor, inputSchemaNode);
       return inputSchemaNode;
    }
 

@@ -156,8 +156,9 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
 
    /** */
    private Document getDocument() throws Exception {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-document";
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + "document";
+      Object value = workCache.get(major, minor);
       if (value instanceof Document document) {
          logger.debugf("Got a cached value of Document for service '%s'", service.id());
          return document;
@@ -166,14 +167,15 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
       // Compute new value to cache.
       logger.debugf("Need to build the Document for service '%s'", service.id());
       Document document = new Parser().parseDocument(artifact.content());
-      workCache.set(key, document);
+      workCache.set(major, minor, document);
       return document;
    }
 
    /** */
    private ObjectNode getInputSchemaNode(OperationEntry operation) {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-" + operation.hashCode() + "-schema";
-      Object value = workCache.get(key);
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + operation.hashCode() + "-schema";
+      Object value = workCache.get(major, minor);
       if (value instanceof ObjectNode inputSchemaNode) {
          logger.debugf("Got a cached value of InputSchemaNode for service '%s' and operation '%s", service.id(), operation.name());
          return inputSchemaNode;
@@ -216,7 +218,7 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
       } catch (Exception e) {
          logger.error("Exception while trying to get input schema", e);
       }
-      workCache.set(key, inputSchemaNode);
+      workCache.set(major, minor, inputSchemaNode);
       return inputSchemaNode;
    }
 

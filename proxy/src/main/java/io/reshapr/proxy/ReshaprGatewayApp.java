@@ -25,6 +25,7 @@ import io.reshapr.discovery.exposition.v1.ExpositionDiscoveryRequest;
 import io.reshapr.discovery.exposition.v1.ExpositionDiscoveryResponse;
 import io.reshapr.discovery.exposition.v1.ExpositionDiscoveryServiceGrpc;
 import io.reshapr.discovery.exposition.v1.MutinyExpositionDiscoveryServiceGrpc;
+import io.reshapr.proxy.mcp.WorkCache;
 import io.reshapr.proxy.registry.ArtifactEntry;
 import io.reshapr.proxy.registry.ArtifactEntryType;
 import io.reshapr.proxy.registry.ConfigurationEntry;
@@ -78,6 +79,7 @@ public class ReshaprGatewayApp {
    private final MutinyExpositionDiscoveryServiceGrpc.MutinyExpositionDiscoveryServiceStub asyncDiscoveryService;
    private final GatewayRegistry gatewayRegistry;
    private final Mappers registryMappers;
+   private final WorkCache workCache;
 
    @ConfigProperty(name = "reshapr.gateway.id")
    String gatewayId;
@@ -94,16 +96,19 @@ public class ReshaprGatewayApp {
    /**
     *
     * @param discoveryService
+    * @param asyncDiscoveryService
     * @param gatewayRegistry
     * @param registryMappers
+    * @param workCache
     */
    public ReshaprGatewayApp(@RegisterClientInterceptor(GrpcAuthClientInterceptor.class) @GrpcClient("exposition-discovery") ExpositionDiscoveryServiceGrpc.ExpositionDiscoveryServiceBlockingStub discoveryService,
                             @RegisterClientInterceptor(GrpcAuthClientInterceptor.class) @GrpcClient("exposition-discovery") MutinyExpositionDiscoveryServiceGrpc.MutinyExpositionDiscoveryServiceStub asyncDiscoveryService,
-                            GatewayRegistry gatewayRegistry, Mappers registryMappers) {
+                            GatewayRegistry gatewayRegistry, Mappers registryMappers, WorkCache workCache) {
       this.discoveryService = discoveryService;
       this.asyncDiscoveryService = asyncDiscoveryService;
       this.gatewayRegistry = gatewayRegistry;
       this.registryMappers = registryMappers;
+      this.workCache = workCache;
       logger.info("reShapr Gateway Application is starting...");
    }
 
@@ -240,6 +245,10 @@ public class ReshaprGatewayApp {
          // Check if we need to process any attached artifact for special handling.
          analyseAttachedArtifacts(attachedArtifacts, service);
       }
+
+      // Don't forget to invalidate the work cache for this service - so that artifacts will be re-parsed.
+      logger.debugf("Invalidate work cache for Service with ID '%s'" + service.id());
+      workCache.invalidateMajor(String.valueOf(service.hashCode()));
    }
 
    private boolean isRootArtifact(ArtifactEntry artifact) {

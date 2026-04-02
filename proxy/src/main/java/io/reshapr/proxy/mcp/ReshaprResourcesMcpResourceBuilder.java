@@ -51,7 +51,7 @@ public class ReshaprResourcesMcpResourceBuilder implements McpResourceBuilder {
    /** Get a JBoss logging logger. */
    private final Logger logger = Logger.getLogger(getClass());
 
-   private static final String CACHE_KEYS_PREFIX = "mrmcprb-";
+   private static final String CACHE_KEYS_PREFIX = "rrmcprb-";
 
    private static final ObjectMapper YAML_MAPPER = ObjectMapperFactory.getYamlObjectMapper();
 
@@ -233,8 +233,8 @@ public class ReshaprResourcesMcpResourceBuilder implements McpResourceBuilder {
    }
 
    private @Nullable JsonNode getResourcesNode() {
-      String key = CACHE_KEYS_PREFIX + service.hashCode();
-      if (workCache.get(key) instanceof JsonNode resourcesNode) {
+      String major = String.valueOf(service.hashCode());
+      if (workCache.get(major, CACHE_KEYS_PREFIX) instanceof JsonNode resourcesNode) {
          logger.tracef("Got a cached value of Resources JsonNode for service '%s'", service.id());
          return resourcesNode;
       }
@@ -258,7 +258,7 @@ public class ReshaprResourcesMcpResourceBuilder implements McpResourceBuilder {
          JsonNode artifactNode = YAML_MAPPER.readTree(promptsArtifact.get().content());
          JsonNode resourcesNode = artifactNode.get("resources");
 
-         workCache.set(key, resourcesNode);
+         workCache.set(major, CACHE_KEYS_PREFIX, resourcesNode);
          return resourcesNode;
       } catch (Exception e) {
          logger.errorf(e, "Cannot read Reshapr Resources artifact for service '%s'", service.id());
@@ -267,8 +267,9 @@ public class ReshaprResourcesMcpResourceBuilder implements McpResourceBuilder {
    }
 
    private @Nullable JsonNode getResourceTemplatesNode() {
-      String key = CACHE_KEYS_PREFIX + service.hashCode() + "-templates";
-      if (workCache.get(key) instanceof JsonNode templatesNode) {
+      String major = String.valueOf(service.hashCode());
+      String minor = CACHE_KEYS_PREFIX + "-templates";
+      if (workCache.get(major, minor) instanceof JsonNode templatesNode) {
          logger.tracef("Got a cached value of ResourceTemplates JsonNode for service '%s'", service.id());
          return templatesNode;
       }
@@ -292,7 +293,7 @@ public class ReshaprResourcesMcpResourceBuilder implements McpResourceBuilder {
          JsonNode artifactNode = YAML_MAPPER.readTree(promptsArtifact.get().content());
          JsonNode templatesNode = artifactNode.get("resourceTemplates");
 
-         workCache.set(key, templatesNode);
+         workCache.set(major, minor, templatesNode);
          return templatesNode;
       } catch (Exception e) {
          logger.errorf(e, "Cannot read Reshapr Resources artifact for service '%s'", service.id());

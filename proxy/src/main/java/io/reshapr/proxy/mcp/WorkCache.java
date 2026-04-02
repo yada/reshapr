@@ -15,10 +15,13 @@
  */
 package io.reshapr.proxy.mcp;
 
-import io.reshapr.proxy.util.LRUCache;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
+
+import java.util.List;
 
 /**
  * A configurable basic working cache for MCP operations.
@@ -30,34 +33,46 @@ public class WorkCache {
    /** Get a JBoss logging logger. */
    private final Logger logger = Logger.getLogger(getClass());
 
-   private final LRUCache<String, Object> cache;
+   private final Cache<String, Object> cache;
 
    /**
     * Build a working cache from a LRU cache with maximum capacity.
     * @param cacheSize The maximum capacity/size of the working cache.
     */
    public WorkCache(@ConfigProperty(name = "reshapr.gateway.mcp.cache.size") int cacheSize){
-      this.cache = new LRUCache<>(cacheSize);
+      this.cache = Caffeine.newBuilder()
+            .maximumSize(cacheSize)
+            .build();
    }
 
-   public void set(String key, Object value) {
+   public void set(String major, String minor, Object value) {
+      String key = major + "_" + minor;
       cache.put(key, value);
    }
 
-   public Object get(String key) {
-      logger.tracef("Looking for key '%s'", key);
-      return cache.get(key);
+   public Object get(String major, String minor) {
+      String key = major + "_" + minor;
+      logger.tracef("Looking for key '%s", key);
+      return cache.getIfPresent(key);
    }
 
-   public int size() {
-      return cache.size();
+   public long size() {
+      return cache.estimatedSize();
    }
 
    public boolean isEmpty() {
-      return cache.isEmpty();
+      return cache.estimatedSize() == 0;
    }
 
    public void clear() {
-      cache.clear();
+      cache.cleanUp();
+   }
+
+   public void invalidateMajor(String major) {
+      final String prefix = major + "_";
+      List<String> keysToRemove = cache.asMap().keySet().stream()
+            .filter(key -> key.startsWith(prefix))
+            .toList();
+      cache.invalidateAll(keysToRemove);
    }
 }
