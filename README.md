@@ -81,5 +81,5 @@ chat with the community. We'd love to hear from you! 🚀
 
 ### Thanks!
 
-[![Stargazers repo roster for @reshaprio/reshapr](http://reporoster.com/stars/reshaprio/reshapr)](http://github.com/microcks/microcks/stargazers)
-[![Forkers repo roster for @reshaprio/reshapr](http://reporoster.com/forks/reshaprio/reshapr)](http://github.com/microcks/microcks/network/members)
+[![Stargazers repo roster for @reshaprio/reshapr](http://reporoster.com/stars/reshaprio/reshapr)](http://github.com/reshaprio/reshapr/stargazers)
+[![Forkers repo roster for @reshaprio/reshapr](http://reporoster.com/forks/reshaprio/reshapr)](http://github.com/reshaprio/reshapr/network/members)
