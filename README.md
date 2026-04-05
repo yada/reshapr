@@ -8,10 +8,6 @@
 
 # Welcome to reShapr 🚀
 
-<h1 align="center">
-  <a href="https://www.reshapr.io"><img src="https://github.com/reshaprio/.github/blob/main/assets/reshapr-schema-media-github-full-size.jpeg" alt="reShapr Banner"></a>
-</h1>
-
 [**Website**](https://reshapr.io/) | [**About**](https://reshapr.io/about) | [**Docs**](https://reshapr.io/docs/) | [**Blog**](https://reshapr.io/blog) | [**Community**](https://reshapr.io/community)
 
 ---
@@ -26,8 +22,6 @@
   </a>
   <br>
   <em>✨ Transform any API into lean LLM contexts in seconds.
-  <br> 
-  <b>Click the demo to open the Getting Started tutorial</b> (External link)</em> 🚀
 </p>
 
 > [!IMPORTANT]
