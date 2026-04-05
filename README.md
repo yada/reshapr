@@ -20,6 +20,12 @@
 
 **reShapr** is the open source, no-code MCP Server for AI-Native API Access. It bridges the gap between traditional REST/GraphQL/gRPC services and LLMs by transforming complex services into discoverable, optimized MCP tools.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/reshaprio/.github/main/assets/demo-video-github-full.gif" width="700" alt="reShapr Demo">
+  <br>
+  <em>Transforming any API into lean LLM contexts in seconds.</em>
+</p>
+
 > [!IMPORTANT]
 > To get involved with our community, please familiarize yourself with the project's [Code of Conduct](./CODE_OF_CONDUCT.md).
 
