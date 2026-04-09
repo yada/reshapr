@@ -99,26 +99,11 @@ public class GrpcProxyService {
       }
 
       ManagedChannel originChannel;
-      if (endpoint.getProtocol().startsWith("https://") || endpoint.getPort() == 443) {
+      if (endpoint.getProtocol().equals("https") || endpoint.getPort() == 443) {
          TlsChannelCredentials.Builder tlsBuilder = TlsChannelCredentials.newBuilder();
          if (configuration.backendSecret() != null && configuration.backendSecret().certPem() != null) {
             // Install a trust manager with custom CA certificate.
             tlsBuilder.trustManager(new ByteArrayInputStream(configuration.backendSecret().certPem().getBytes(StandardCharsets.UTF_8)));
-         } else {
-            // Install a trust manager that accepts everything and does not validate certificate chains.
-            tlsBuilder.trustManager(new X509TrustManager() {
-               public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                  return null;
-               }
-
-               public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                  // Accept everything.
-               }
-
-               public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                  // Accept everything.
-               }
-            });
          }
          // Build a Channel using the TLS Builder.
          originChannel = Grpc.newChannelBuilderForAddress(endpoint.getHost(), endpoint.getPort(), tlsBuilder.build())
