@@ -202,10 +202,12 @@ public class McpSchema {
       }
 
       @JsonInclude(JsonInclude.Include.NON_ABSENT)
+      @JsonIgnoreProperties(ignoreUnknown = true)
       public record Sampling() {
       }
 
       @JsonInclude(JsonInclude.Include.NON_ABSENT)
+      @JsonIgnoreProperties(ignoreUnknown = true)
       public record Elicitation() {
       }
    }
