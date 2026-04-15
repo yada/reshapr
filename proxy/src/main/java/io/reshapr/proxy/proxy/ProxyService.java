@@ -78,6 +78,9 @@ public class ProxyService {
       // Manage the Forwarded and X-Forwarded-For headers.
       HeadersUtil.addForwardingHeaders(requestHeaders);
 
+      // Also inject OpenTelemetry tracing headers.
+      HeadersUtil.injectTracingHeaders(headers);
+
       // If the configuration has a backend secret, manage security headers.
       if (configuration.backendSecret() != null) {
          manageSecurityHeaders(configuration.backendSecret(), requestHeaders);

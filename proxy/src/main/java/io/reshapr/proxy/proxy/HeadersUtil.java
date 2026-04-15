@@ -17,6 +17,12 @@ package io.reshapr.proxy.proxy;
 
 import io.reshapr.proxy.context.MethodHandlingContext;
 
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
+
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +35,10 @@ public class HeadersUtil {
    public static final String FORWARDED = "Forwarded";
    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
    private static final String FORWARDED_FOR = "for=";
+
+   private static final TextMapPropagator OTEL_PROPAGATOR =
+         TextMapPropagator.composite(W3CTraceContextPropagator.getInstance(),
+               W3CBaggagePropagator.getInstance());
 
    private HeadersUtil () {
       // Utility class
@@ -57,6 +67,14 @@ public class HeadersUtil {
       }
    }
 
+   /**
+    * Inject tracing headers into the given map.
+    * @param headers The headers map to inject into.
+    */
+   public static void injectTracingHeaders(Map<String, List<String>> headers) {
+      OTEL_PROPAGATOR.inject(Context.current(), headers, new MapTextMapSetter());
+   }
+
    private static String getForAddress(String remoteAddress) {
       if (!remoteAddress.contains(":")) {
          return remoteAddress;
@@ -64,5 +82,14 @@ public class HeadersUtil {
       // IP v6 address, must be enclosed in square brackets and quoted.
       // See https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Forwarded#transitioning_from_x-forwarded-for_to_forwarded
       return "\"[" + remoteAddress + "]\"";
+   }
+
+   private static class MapTextMapSetter implements TextMapSetter<Map<String, List<String>>> {
+      @Override
+      public void set(Map<String, List<String>> carrier, String key, String value) {
+         if (carrier != null) {
+            carrier.put(key, List.of(value));
+         }
+      }
    }
 }

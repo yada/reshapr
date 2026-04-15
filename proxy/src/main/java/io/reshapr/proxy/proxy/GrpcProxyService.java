@@ -49,13 +49,11 @@ import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.jboss.logging.Logger;
 
-import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -287,6 +285,9 @@ public class GrpcProxyService {
 
       // Manage the Forwarded and X-Forwarded-For headers.
       HeadersUtil.addForwardingHeaders(headers);
+
+      // Also inject OpenTelemetry tracing headers.
+      HeadersUtil.injectTracingHeaders(headers);
 
       // Some specific headers must not be included in the gRPC metadata.
       headers.entrySet().stream()
