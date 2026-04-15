@@ -62,6 +62,9 @@ services:
       # Enable debug logging for the proxy to help with troubleshooting
       #- QUARKUS_LOG_CONSOLE_LEVEL=DEBUG
       #- QUARKUS_LOG_CATEGORY__IO_RESHAPR_PROXY__LEVEL=DEBUG
+      # OpenTelemetry is enabled by default, but can be disabled to not pollute with connection errors
+      # in the logs if you don't have an OTEL collector running locally
+      - QUARKUS_OTEL_SDK_DISABLED=true
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:7777/q/health/ready" ]
       start_period: 5s
