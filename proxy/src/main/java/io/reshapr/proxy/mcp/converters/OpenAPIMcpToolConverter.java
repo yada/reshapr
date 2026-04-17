@@ -25,6 +25,7 @@ import io.reshapr.proxy.registry.OperationEntry;
 import io.reshapr.proxy.registry.ServiceEntry;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -149,10 +150,19 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
                String paramIn = parameter.path("in").asText();
 
                if (request.arguments().containsKey(paramName)) {
-                  String paramValue = request.arguments().remove(paramName).toString();
+                  Object param = request.arguments().remove(paramName);
+                  String paramValue = param.toString();
                   if ("path".equals(paramIn)) {
                      pathParams.put(paramName, paramValue);
                   } else if ("query".equals(paramIn)) {
+
+                     String paramType = parameter.path("schema").path(JSON_SCHEMA_TYPE_ELEMENT).asText();
+                     // If parameter is an array, we expect a JSON array in input.
+                     if (JSON_SCHEMA_ARRAY_TYPE.equals(paramType)) {
+                        // We need to convert it to comma separated values for the backend call.
+                        List<String> values = mapper.convertValue(param, new TypeReference<List<String>>() {});
+                        paramValue = String.join(",", values);
+                     }
                      queryParams.put(paramName, paramValue);
                   } else if ("header".equals(paramIn)) {
                      headers.put(paramName, List.of(paramValue));
@@ -298,6 +308,11 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
                   // Recopy enum if any, as it is not inherited by the parameter node from the schema node.
                   if (paramSchema.has("enum")) {
                      propertyNode.set("enum", paramSchema.get("enum"));
+                  }
+                  //
+                  if (JSON_SCHEMA_ARRAY_TYPE.equals(paramType) && paramSchema.has(JSON_SCHEMA_ITEMS_ELEMENT)) {
+                     propertyNode.set(JSON_SCHEMA_ITEMS_ELEMENT,
+                           dereferencedNode(schemaNode, paramSchema.get(JSON_SCHEMA_ITEMS_ELEMENT), new HashSet<>()));
                   }
                }
             }
