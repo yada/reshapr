@@ -20,9 +20,9 @@ import io.reshapr.ctrl.repository.UserRepository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.security.Authenticated;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -38,6 +38,7 @@ import java.time.Duration;
  * Controller for handling authentication and user profile related requests.
  * @author laurent
  */
+@RunOnVirtualThread
 @Path("/auth")
 public class AuthenticationController {
 
