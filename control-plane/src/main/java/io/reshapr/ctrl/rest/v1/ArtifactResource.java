@@ -15,16 +15,15 @@
  */
 package io.reshapr.ctrl.rest.v1;
 
-import io.quarkus.security.Authenticated;
-
 import io.reshapr.ctrl.model.Artifact;
 import io.reshapr.ctrl.model.Service;
 import io.reshapr.ctrl.repository.ArtifactRepository;
-import io.reshapr.ctrl.repository.SecretRepository;
 import io.reshapr.ctrl.service.AttachmentArtifactInfo;
 import io.reshapr.ctrl.service.ServiceInfo;
 import io.reshapr.ctrl.service.SpecificationArtifactInfo;
 import io.reshapr.ctrl.service.ServiceManagerService;
+
+import io.quarkus.security.Authenticated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -55,15 +54,26 @@ public class ArtifactResource {
 
    private final ServiceManagerService serviceManagerService;
    private final ArtifactRepository artifactRepository;
-   private final SecretRepository secretRepository;
    private final Mappers v1Mappers;
 
    public ArtifactResource(ServiceManagerService serviceManagerService, ArtifactRepository artifactRepository,
-         SecretRepository secretRepository, Mappers v1Mappers) {
+         Mappers v1Mappers) {
       this.serviceManagerService = serviceManagerService;
       this.artifactRepository = artifactRepository;
-      this.secretRepository = secretRepository;
       this.v1Mappers = v1Mappers;
+   }
+
+   @GET
+   @Authenticated
+   @Path("/{id}")
+   @Produces(MediaType.APPLICATION_JSON)
+   public Response getArtifact(@PathParam("id") String id) {
+      logger.debugf("Retrieving artifact with id%s", id);
+      Artifact artifact = artifactRepository.findById(id);
+      if (artifact == null) {
+         return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      return Response.ok(v1Mappers.toResource(artifact)).build();
    }
 
    @GET

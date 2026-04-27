@@ -25,6 +25,7 @@ import io.reshapr.ctrl.model.ArtifactType;
  * @param content
  * @param path
  * @param mainArtifact
+ * @param sourceArtifact
  * @param type
  */
 public record ArtifactDTO(
@@ -34,5 +35,6 @@ public record ArtifactDTO(
       String content,
       String path,
       boolean mainArtifact,
+      String sourceArtifact,
       ArtifactType type) {
 }
