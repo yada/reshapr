@@ -826,6 +826,9 @@ components:
           description: Initial Access Token if using th einternal identity provider
             for OAuth2 DCR
           type: string
+        backendTimeout:
+          description: Timeout in milliseconds for requests to the backend endpoint
+          type: integer
     ActiveExposition:
       description: An Exposition that is currently active. ie. exposed by at least
         one Gateway
@@ -866,6 +869,7 @@ components:
           type: string
         backendEndpoint:
           description: ""
+          type: string
     GatewayView:
       description: Minimalist representation of a Gateway
       required:
