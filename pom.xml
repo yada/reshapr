@@ -10,7 +10,6 @@
   <modules>
     <module>api</module>
     <module>commons</module>
-    <module>mcp-commons</module>
     <module>control-plane</module>
     <module>proxy</module>
   </modules>
