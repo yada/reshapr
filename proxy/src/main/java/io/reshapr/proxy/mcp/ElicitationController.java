@@ -22,10 +22,11 @@ import io.reshapr.proxy.mcp.state.SessionStore;
 import io.reshapr.proxy.registry.SecretEntry;
 import io.reshapr.proxy.util.WebUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import io.reshapr.security.AuthenticationException;
+import io.reshapr.security.OidcUtils;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -38,11 +39,7 @@ import org.jboss.logging.Logger;
 
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 
 @Path("/elicitation")
@@ -190,41 +187,23 @@ public class ElicitationController {
          return ElicitationController.Templates.configError(elicitationInformation.getBackendEndpoint());
       }
 
-      // Now exchange the authorization code for an access token calling the token endpoint.
       String redirectUri = WebUtils.getHTTPScheme(fqdns.getFirst()) + fqdns.getFirst() + "/elicitation/callback?elicitationId=" + elicitationId;
-      HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create(secret.oauth2ClientConfiguration().tokenEndpoint()))
-            .method("POST",
-                  HttpRequest.BodyPublishers.ofString("grant_type=authorization_code"
-                        + "&code=" + authorizationCode
-                        + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                        + "&client_id=" + secret.oauth2ClientConfiguration().clientId()))
-            .header("Content-Type", "application/x-www-form-urlencoded");
 
-      try (HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
-            .version(HttpClient.Version.HTTP_1_1).build()) {
-
-         // Send the request to token endpoint.
-         HttpResponse<String> response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
-
-         if (response.statusCode() != 200) {
-            logger.errorf("OAuth2 token endpoint returned error '%s' for elicitation id '%s'", response.body(), elicitationId);
-            return ElicitationController.Templates.tokenError(response.body());
-         }
-
-         // Now parse the response to extract the access token.
-         ObjectMapper mapper = new ObjectMapper();
-         JsonNode jsonResponse = mapper.readTree(response.body());
-         String accessToken = jsonResponse.get("access_token").asText();
-
-         // Save the access token in the session information for correct secret entry.
-         sessionInformation.setSecretValue(elicitationInformation.getSecretEntry(), accessToken);
-         sessionStore.updateSessionInfo(sessionInformation.getId(), sessionInformation);
-      } catch (Exception e) {
+      // Now exchange the authorization code for an access token calling the token endpoint.
+      String accessToken = null;
+      try {
+         accessToken = OidcUtils.exchangeAuthorizationCode(
+               new OidcUtils.OidcEndpointConfig(secret.oauth2ClientConfiguration().tokenEndpoint(),
+                     secret.oauth2ClientConfiguration().clientId(), secret.oauth2ClientConfiguration().clientSecret()),
+               new ObjectMapper(), authorizationCode, redirectUri);
+      } catch (AuthenticationException e) {
          logger.errorf("OAuth2 token exchange fails with '%s' for elicitation id '%s'", e.getMessage(), elicitationId);
          return ElicitationController.Templates.tokenError(e.getMessage());
       }
+
+      // Save the access token in the session information for correct secret entry.
+      sessionInformation.setSecretValue(elicitationInformation.getSecretEntry(), accessToken);
+      sessionStore.updateSessionInfo(sessionInformation.getId(), sessionInformation);
 
       // Remove the elicitation information so no one can reuse it.
       elicitationStore.removeElicitationInfo(elicitationId);

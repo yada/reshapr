@@ -191,6 +191,7 @@ secretCommand.command('create-elicitation <name>')
   .option('-d, --description <description>', 'Description for the Elicitationsecret')
   .option('-t, --token <token>', 'Token for the Elicitation secret (if sensitive data access is needed)')
   .option('--oc, --oauth2ClientID <oauth2ClientID>', 'The ClientID for the backend Authorization service (if OAuth2 is used)')
+  .option('--ocs, --oauth2ClientSecret <oauth2ClientSecret>', 'The ClientSecret for the backend Authorization service (if OAuth2 is used and if needed by the Authorization service)')
   .option('--oae, --oauth2AuthorizationEndpoint <authorizationEndpoint>', 'Authorization Endpoint for the backend authentication (including query parameters without clientID and redirect_uri)') 
   .option('--ote, --oauth2TokenEndpoint <tokenEndpoint>', 'Token exchange Endpoint for backend authentication (if OAuth2 is used)')
   .option('-o, --output <format>', 'Output format (json, yaml)')
@@ -211,7 +212,8 @@ secretCommand.command('create-elicitation <name>')
         process.exit(1);
       }
       secret.oauth2ClientConfiguration = {
-        clientId: options.oauth2ClientID, 
+        clientId: options.oauth2ClientID,
+        clientSecret: options.oauth2ClientSecret,
         authorizationEndpoint: options.oauth2AuthorizationEndpoint,
         tokenEndpoint: options.oauth2TokenEndpoint
       }

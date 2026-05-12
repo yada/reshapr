@@ -25,6 +25,7 @@ package io.reshapr.proxy.registry;
  * @param tokenHeader An optional header for the token.
  * @param certPem An optional PEM-encoded certificate associated with the secret.
  * @param useElicitation A flag indicating whether elicitation is used for this secret.
+ * @param oauth2ClientConfiguration An optional OAuth2 client configuration entry.
  * @author laurent
  */
 public record SecretEntry(

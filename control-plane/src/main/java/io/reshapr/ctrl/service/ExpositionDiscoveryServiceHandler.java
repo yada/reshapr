@@ -54,12 +54,15 @@ import java.util.concurrent.Executors;
 
 /**
  * gRPC service handler for exposition discovery requests.
+ *
  * @author laurent
  */
 @GrpcService
 public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServiceGrpc.ExpositionDiscoveryServiceImplBase {
 
-   /** Get a JBoss logging logger. */
+   /**
+    * Get a JBoss logging logger.
+    */
    private final Logger logger = Logger.getLogger(getClass());
 
    private final Executor cancellationExecutor = Executors.newSingleThreadExecutor();
@@ -131,7 +134,8 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
       });
 
       // Set a Cancellation listener to remove the observer when the context is cancelled.
-      Context.current().addListener(listener -> {;
+      Context.current().addListener(listener -> {
+         ;
          logger.infof("Cancellation listener triggered for gatewayId: %s", request.getGatewayId());
          removeOrganizationExpositionsObserver(organization, request.getGatewayId());
       }, cancellationExecutor);
@@ -206,8 +210,9 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
 
    /**
     * Clears the observer for the given organization and gatewayId.
+    *
     * @param organization The organization ID.
-    * @param gatewayId The gateway ID.
+    * @param gatewayId    The gateway ID.
     */
    public void clearObserver(String organization, String gatewayId) {
       removeOrganizationExpositionsObserver(organization, gatewayId);
@@ -215,7 +220,8 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
 
    /**
     * Notifies observers about the creation of a new exposition.
-    * @param exposition The created exposition.
+    *
+    * @param exposition   The created exposition.
     * @param gatewayGroup The gateway group associated with the exposition.
     */
    public void notifyExpositionCreation(Exposition exposition, GatewayGroup gatewayGroup) {
@@ -231,7 +237,8 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
 
    /**
     * Notifies observers about the update of a new exposition.
-    * @param exposition The created exposition.
+    *
+    * @param exposition   The created exposition.
     * @param gatewayGroup The gateway group associated with the exposition.
     */
    public void notifyExpositionUpdate(Exposition exposition, GatewayGroup gatewayGroup) {
@@ -247,7 +254,8 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
 
    /**
     * Notifies observers about the deletion of a new exposition.
-    * @param exposition The created exposition.
+    *
+    * @param exposition   The created exposition.
     * @param gatewayGroup The gateway group associated with the exposition.
     */
    public void notifyExpositionDeletion(Exposition exposition, GatewayGroup gatewayGroup) {
@@ -283,7 +291,8 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
       }
    }
 
-   private record OrganizationExpositionsObserver(String gatewayId, Map<String, String> gatewayLabels, StreamObserver<ExpositionChangeEvent> observer) {
+   private record OrganizationExpositionsObserver(String gatewayId, Map<String, String> gatewayLabels,
+                                                  StreamObserver<ExpositionChangeEvent> observer) {
    }
 
    private io.reshapr.discovery.exposition.v1.Exposition grpcExpositionFromModel(ConfigurationPlan configuration) {
@@ -331,7 +340,7 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
    }
 
    private io.reshapr.discovery.exposition.v1.Configuration grpcConfigurationFromModel(ConfigurationPlan configuration) {
-       io.reshapr.discovery.exposition.v1.Configuration.Builder builder = io.reshapr.discovery.exposition.v1.Configuration.newBuilder()
+      io.reshapr.discovery.exposition.v1.Configuration.Builder builder = io.reshapr.discovery.exposition.v1.Configuration.newBuilder()
             .setId(configuration.id)
             .setName(configuration.name)
             .setBackendEndpoint(configuration.backendEndpoint)
@@ -342,7 +351,7 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
          builder.setApiKey(configuration.apiKey);
       }
       if (configuration.oauth2Configuration != null) {
-          io.reshapr.discovery.exposition.v1.OAuth2Configuration.Builder oauth2Builder = io.reshapr.discovery.exposition.v1.OAuth2Configuration.newBuilder()
+         io.reshapr.discovery.exposition.v1.OAuth2Configuration.Builder oauth2Builder = io.reshapr.discovery.exposition.v1.OAuth2Configuration.newBuilder()
                .addAllAuthorizationServers(configuration.oauth2Configuration.authorizationServers());
          if (configuration.oauth2Configuration.jwksUri() != null) {
             oauth2Builder.setJwksUri(configuration.oauth2Configuration.jwksUri());
@@ -362,7 +371,7 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
    }
 
    private io.reshapr.discovery.exposition.v1.Secret grpcSecretFromModel(Secret secret) {
-       io.reshapr.discovery.exposition.v1.Secret.Builder builder = io.reshapr.discovery.exposition.v1.Secret.newBuilder()
+      io.reshapr.discovery.exposition.v1.Secret.Builder builder = io.reshapr.discovery.exposition.v1.Secret.newBuilder()
             .setName(secret.name);
       if (secret.username != null) {
          builder.setUsername(secret.username);
@@ -373,35 +382,38 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
       if (secret.getToken() != null) {
          builder.setToken(secret.getToken());
       }
-       if (secret.tokenHeader != null) {
-          builder.setTokenHeader(secret.tokenHeader);
-       }
-       if (secret.certPem != null) {
-          builder.setCertPem(secret.certPem);
-       }
-       builder.setUseElicitation(secret.useElicitation);
-       // Take care of third party OAuth2 configuration is elicitation is used.
-       if (secret.useElicitation && secret.oauth2ClientConfiguration != null) {
-           io.reshapr.discovery.exposition.v1.OAuth2ClientConfiguration.Builder tpOauth2Builder =
-                   io.reshapr.discovery.exposition.v1.OAuth2ClientConfiguration.newBuilder();
-            var oauth2ClientConfiguration = secret.oauth2ClientConfiguration;
-            if (oauth2ClientConfiguration.clientId() != null) {
-               tpOauth2Builder.setClientId(oauth2ClientConfiguration.clientId());
-            }
-            if (oauth2ClientConfiguration.authorizationEndpoint() != null) {
-               tpOauth2Builder.setAuthorizationEndpoint(oauth2ClientConfiguration.authorizationEndpoint());
-            }
-            if (oauth2ClientConfiguration.tokenEndpoint() != null) {
-               tpOauth2Builder.setTokenEndpoint(oauth2ClientConfiguration.tokenEndpoint());
-            }
-            builder.setOauth2ClientConfiguration(tpOauth2Builder.build());
-       }
-       return builder.build();
+      if (secret.tokenHeader != null) {
+         builder.setTokenHeader(secret.tokenHeader);
+      }
+      if (secret.certPem != null) {
+         builder.setCertPem(secret.certPem);
+      }
+      builder.setUseElicitation(secret.useElicitation);
+      // Take care of third party OAuth2 configuration is elicitation is used.
+      if (secret.useElicitation && secret.oauth2ClientConfiguration != null) {
+         io.reshapr.discovery.exposition.v1.OAuth2ClientConfiguration.Builder tpOauth2Builder =
+               io.reshapr.discovery.exposition.v1.OAuth2ClientConfiguration.newBuilder();
+         var oauth2ClientConfiguration = secret.oauth2ClientConfiguration;
+         if (oauth2ClientConfiguration.clientId() != null) {
+            tpOauth2Builder.setClientId(oauth2ClientConfiguration.clientId());
+         }
+         if (oauth2ClientConfiguration.clientSecret() != null) {
+            tpOauth2Builder.setClientSecret(oauth2ClientConfiguration.clientSecret());
+         }
+         if (oauth2ClientConfiguration.authorizationEndpoint() != null) {
+            tpOauth2Builder.setAuthorizationEndpoint(oauth2ClientConfiguration.authorizationEndpoint());
+         }
+         if (oauth2ClientConfiguration.tokenEndpoint() != null) {
+            tpOauth2Builder.setTokenEndpoint(oauth2ClientConfiguration.tokenEndpoint());
+         }
+         builder.setOauth2ClientConfiguration(tpOauth2Builder.build());
+      }
+      return builder.build();
    }
 
    private io.reshapr.discovery.exposition.v1.Artifact grpcArtifactFromModel(Artifact artifact) {
-       io.reshapr.discovery.exposition.v1.Artifact.Builder builder =
-               io.reshapr.discovery.exposition.v1.Artifact.newBuilder()
+      io.reshapr.discovery.exposition.v1.Artifact.Builder builder =
+            io.reshapr.discovery.exposition.v1.Artifact.newBuilder()
                   .setId(artifact.id)
                   .setName(artifact.name)
                   .setType(grpcArtifactTypeFromModel(artifact.type))
@@ -423,7 +435,8 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
          case RESHAPR_PROMPTS -> io.reshapr.discovery.exposition.v1.ArtifactType.RESHAPR_PROMPTS;
          case RESHAPR_CUSTOM_TOOLS -> io.reshapr.discovery.exposition.v1.ArtifactType.RESHAPR_CUSTOM_TOOLS;
          case RESHAPR_RESOURCES -> io.reshapr.discovery.exposition.v1.ArtifactType.RESHAPR_RESOURCES;
-         default -> io.reshapr.discovery.exposition.v1.ArtifactType.JSON_FRAGMENT; // Default to JSON_FRAGMENT if unknown
+         default ->
+               io.reshapr.discovery.exposition.v1.ArtifactType.JSON_FRAGMENT; // Default to JSON_FRAGMENT if unknown
       };
    }
 }

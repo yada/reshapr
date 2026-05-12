@@ -24,6 +24,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 /**
  * Data Transfer Object (DTO) for third-party OAuth2 configuration in the Reshapr control plane.
  * @param clientId The OAuth2 client ID
+ * @param clientSecret The OAuth2 client secret if any
  * @param authorizationEndpoint The OAuth2 authorization endpoint URL
  * @param tokenEndpoint The OAuth2 token endpoint URL
  * @author laurent
@@ -32,6 +33,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 public record OAuth2ClientConfigurationDTO(
       @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
       String clientId,
+      @JsonDeserialize(using = HtmlEncodedStringDeserializer.class)
+      String clientSecret,
       @HttpUrl(message = "Authorization endpoint must be a valid HTTP(S) URL")
       String authorizationEndpoint,
       @HttpUrl(message = "Token endpoint must be a valid HTTP(S) URL")

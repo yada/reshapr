@@ -82,6 +82,7 @@ public class Secret extends TenantAwareEntity {
 
    public record OAuth2ClientConfiguration(
          String clientId,
+         String clientSecret,
          String authorizationEndpoint,
          String tokenEndpoint) {
    }

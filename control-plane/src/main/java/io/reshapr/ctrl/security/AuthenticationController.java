@@ -182,7 +182,7 @@ public class AuthenticationController {
                objectMapper, authorizationCode, ctrlPlaneRedirectUri);
 
 
-      } catch ( AuthenticationException e) {
+      } catch (AuthenticationException e) {
          logger.errorf("OAuth2 token exchange fails with '%s'", e.getMessage());
          return Response.status(Response.Status.UNAUTHORIZED).entity("Failed to exchange authorization code for access token").build();
       }

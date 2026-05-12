@@ -67,6 +67,7 @@ message OAuth2ClientConfiguration {
   string clientId = 1;
   string authorizationEndpoint = 2;
   string tokenEndpoint = 3;
+  optional string clientSecret = 4;
 }
 
 // ExpositionDiscoveryRequest is used to request exposition discovery information

@@ -1,8 +1,16 @@
 .navbar {
   --bs-navbar-brand-color: white;
-  --bs-navbar-brand-hover-color: #f09B41;
+  --bs-navbar-brand-hover-color: oklch(0.535 0.102 173.489);
 }
 
 body {
   background-color: white;
+}
+
+.btn {
+  --bs-btn-bg: oklch(0.696 0.138 170.026);
+  --bs-btn-active-bg: oklch(0.696 0.138 170.026);
+  --bs-btn-border-color: oklch(0.696 0.138 170.026);
+  --bs-btn-hover-bg: oklch(0.535 0.102 173.489);
+  --bs-btn-hover-border-color: oklch(0.535 0.102 173.489);
 }

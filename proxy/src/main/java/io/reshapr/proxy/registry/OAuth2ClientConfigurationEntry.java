@@ -18,12 +18,14 @@ package io.reshapr.proxy.registry;
 /**
  * Represents a third-party OAuth2 configuration entry in the registry.
  * @param clientId The OAuth2 client ID
+ * @param clientSecret The OAuth2 client secret if any
  * @param authorizationEndpoint The OAuth2 authorization endpoint URL
  * @param tokenEndpoint The OAuth2 token endpoint URL
  * @author laurent
  */
 public record OAuth2ClientConfigurationEntry(
       String clientId,
+      String clientSecret,
       String authorizationEndpoint,
       String tokenEndpoint) {
 }
