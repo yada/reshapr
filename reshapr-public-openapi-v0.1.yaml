@@ -829,6 +829,9 @@ components:
         backendTimeout:
           description: Timeout in milliseconds for requests to the backend endpoint
           type: integer
+        audit:
+          description: Whether the audit log will be enabled and calls logged. Default is false.
+          type: boolean
     ActiveExposition:
       description: An Exposition that is currently active. ie. exposed by at least
         one Gateway
