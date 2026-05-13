@@ -38,6 +38,8 @@ import io.reshapr.proxy.util.WebUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.instrumentation.annotations.AddingSpanAttributes;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.annotation.Nullable;
@@ -97,7 +99,8 @@ public class McpController {
    @Path("/{serviceId}")
    @Produces(MediaType.APPLICATION_JSON)
    @SecureEndpoint
-   public Response handleHttpStreamable(@PathParam("serviceId") String serviceId,
+   @AddingSpanAttributes
+   public Response handleHttpStreamable(@SpanAttribute("serviceId") @PathParam("serviceId") String serviceId,
                                         McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest) {
 
       ServiceEntry serviceEntry = gatewayRegistry.getService(serviceId);
@@ -114,8 +117,10 @@ public class McpController {
    @Path("/{organizationId}/{service}/{version}")
    @Produces(MediaType.APPLICATION_JSON)
    @SecureEndpoint
-   public Response handleHttpStreamable(@PathParam("organizationId") String organizationId,
-                                        @PathParam("service") String service, @PathParam("version") String version,
+   @AddingSpanAttributes
+   public Response handleHttpStreamable(@SpanAttribute("organizationId") @PathParam("organizationId") String organizationId,
+                                        @SpanAttribute("service") @PathParam("service") String service,
+                                        @SpanAttribute("version") @PathParam("version") String version,
                                         McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest) {
 
       // If serviceName was encoded with '+' instead of '%20', remove them.
