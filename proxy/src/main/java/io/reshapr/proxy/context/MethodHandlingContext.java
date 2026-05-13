@@ -16,7 +16,7 @@
 package io.reshapr.proxy.context;
 
 /**
- * IdentityInfoContext is a utility class that provides a scoped storage for IdentityInfo.
+ * MethodHandlingContext is a utility class that provides a scoped storage for MethodHandlingInfo.
  * @author laurent
  */
 public class MethodHandlingContext {
@@ -33,5 +33,9 @@ public class MethodHandlingContext {
 
    public static SessionInfo getSessionInfo() {
       return METHOD_HANDLING_INFO.get().mcpSessionInfo();
+   }
+
+   public static String getUserId() {
+      return METHOD_HANDLING_INFO.get().userId();
    }
 }

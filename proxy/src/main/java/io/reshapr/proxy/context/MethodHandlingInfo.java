@@ -21,9 +21,11 @@ import jakarta.annotation.Nullable;
  * Allow transferring method execution information on incoming MCP request.
  * @param remoteAddress The remote address of the client making the request.
  * @param mcpSessionInfo THe information on current MCP session if any.
+ * @param userId The authenticated user ID (JWT subject), if available.
  * @author laurent
  */
 public record MethodHandlingInfo(
       String remoteAddress,
-      @Nullable SessionInfo mcpSessionInfo) {
+      @Nullable SessionInfo mcpSessionInfo,
+      @Nullable String userId) {
 }

@@ -77,6 +77,9 @@ public class ConfigurationPlan extends TenantAwareEntity {
    @Column(columnDefinition = "JSONB", name = "oauth2_configuration")
    public OAuth2Configuration oauth2Configuration;
 
+   @Column(name = "audit")
+   public boolean audit;
+
    @ManyToOne(fetch = EAGER)
    @JoinColumn(name = "backend_secret_id")
    public Secret backendSecret;

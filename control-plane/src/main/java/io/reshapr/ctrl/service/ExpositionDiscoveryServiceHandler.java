@@ -367,6 +367,7 @@ public class ExpositionDiscoveryServiceHandler extends ExpositionDiscoveryServic
       if (configuration.backendSecret != null) {
          builder.setBackendSecret(grpcSecretFromModel(configuration.backendSecret));
       }
+      builder.setAudit(configuration.audit);
       return builder.build();
    }
 

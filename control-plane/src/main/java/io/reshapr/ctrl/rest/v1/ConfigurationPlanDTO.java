@@ -46,8 +46,9 @@ public class ConfigurationPlanDTO {
    protected String backendSecretId;
    protected String apiKey;
    protected OAuth2ConfigurationDTO oauth2Configuration;
-   // Indicates whether to use the internal identity provider for OAuth2 authentication.
-   protected String initialAccessToken;
+    // Indicates whether to use the internal identity provider for OAuth2 authentication.
+    protected String initialAccessToken;
+    protected boolean audit;
 
    public String getId() {
       return id;
@@ -149,7 +150,15 @@ public class ConfigurationPlanDTO {
       return backendTimeout;
    }
 
-   public void setBackendTimeout(Long backendTimeout) {
-      this.backendTimeout = backendTimeout;
-   }
+    public void setBackendTimeout(Long backendTimeout) {
+       this.backendTimeout = backendTimeout;
+    }
+
+    public boolean isAudit() {
+       return audit;
+    }
+
+    public void setAudit(boolean audit) {
+       this.audit = audit;
+    }
 }

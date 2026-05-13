@@ -15,6 +15,9 @@
  */
 package io.reshapr.proxy.mcp;
 
+import io.opentelemetry.api.trace.Span;
+import io.reshapr.proxy.audit.AuditEvent;
+import io.reshapr.proxy.audit.AuditLogger;
 import io.reshapr.proxy.mcp.converters.GraphQLMcpToolConverter;
 import io.reshapr.proxy.mcp.converters.GrpcMcpToolConverter;
 import io.reshapr.proxy.mcp.converters.McpToolConverter;
@@ -34,6 +37,7 @@ import io.reshapr.proxy.registry.OperationEntry;
 import io.reshapr.proxy.registry.SecretEntry;
 import io.reshapr.proxy.registry.ServiceEntry;
 import io.reshapr.proxy.security.SecureEndpoint;
+import io.reshapr.proxy.security.SecureEndpointFilter;
 import io.reshapr.proxy.util.WebUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -47,6 +51,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -57,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeUnit;
 
 @RunOnVirtualThread
 @Path("/mcp")
@@ -71,6 +78,7 @@ public class McpController {
    private final WorkCache workCache;
    private final ProxyService proxyService;
    private final GrpcProxyService grpcProxyService;
+   private final AuditLogger auditLogger;
 
    private final ObjectMapper mapper = new ObjectMapper();
 
@@ -84,24 +92,27 @@ public class McpController {
     * @param workCache The work cache for temporary data storage.
     * @param proxyService   The proxy service for handling HTTP proxying.
     * @param grpcProxyService The gRPC proxy service for handling gRPC proxying.
+    * @param auditLogger The audit logger for emitting structured audit events.
     */
    public McpController(GatewayRegistry gatewayRegistry, SessionStore sessionStore, ElicitationStore elicitationStore,
-                        WorkCache workCache, ProxyService proxyService, GrpcProxyService grpcProxyService) {
+                        WorkCache workCache, ProxyService proxyService, GrpcProxyService grpcProxyService,
+                        AuditLogger auditLogger) {
       this.gatewayRegistry = gatewayRegistry;
       this.sessionStore = sessionStore;
       this.elicitationStore = elicitationStore;
       this.workCache = workCache;
       this.proxyService = proxyService;
       this.grpcProxyService = grpcProxyService;
+      this.auditLogger = auditLogger;
    }
 
    @POST
    @Path("/{serviceId}")
    @Produces(MediaType.APPLICATION_JSON)
    @SecureEndpoint
-   @AddingSpanAttributes
-   public Response handleHttpStreamable(@SpanAttribute("serviceId") @PathParam("serviceId") String serviceId,
-                                        McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest) {
+   public Response handleHttpStreamable(@PathParam("serviceId") String serviceId,
+                                        McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest,
+                                        @Context ContainerRequestContext requestContext) {
 
       ServiceEntry serviceEntry = gatewayRegistry.getService(serviceId);
       if (serviceEntry == null) {
@@ -110,7 +121,7 @@ public class McpController {
          return Response.status(Response.Status.NOT_FOUND).entity(errorMsg).build();
       }
 
-      return handleMcpRequest(serviceEntry, request, headers, serverRequest);
+      return handleMcpRequest(serviceEntry, request, headers, serverRequest, requestContext);
    }
 
    @POST
@@ -121,7 +132,8 @@ public class McpController {
    public Response handleHttpStreamable(@SpanAttribute("organizationId") @PathParam("organizationId") String organizationId,
                                         @SpanAttribute("service") @PathParam("service") String service,
                                         @SpanAttribute("version") @PathParam("version") String version,
-                                        McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest) {
+                                        McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest,
+                                        @Context ContainerRequestContext requestContext) {
 
       // If serviceName was encoded with '+' instead of '%20', remove them.
       if (service.contains("+")) {
@@ -135,26 +147,39 @@ public class McpController {
          return Response.status(Response.Status.NOT_FOUND).entity(errorMsg).build();
       }
 
-      return handleMcpRequest(serviceEntry, request, headers, serverRequest);
+      return handleMcpRequest(serviceEntry, request, headers, serverRequest, requestContext);
    }
 
-   private Response handleMcpRequest(ServiceEntry service, McpSchema.JSONRPCRequest request, HttpHeaders headers, HttpServerRequest serverRequest) {
-      logger.debugf("Handling a Mcp Http call on service: %s", service.id());
-      logger.debugf("Request body: %s", request);
-      logger.debugf("Request headers: %s", headers.getRequestHeaders());
+   private Response handleMcpRequest(@SpanAttribute("service") ServiceEntry service, McpSchema.JSONRPCRequest request,
+                                     HttpHeaders headers, HttpServerRequest serverRequest,
+                                     ContainerRequestContext requestContext) {
+      if (logger.isDebugEnabled()) {
+         logger.debugf("Handling a Mcp Http call on service: %s", service.id());
+         logger.debugf("Request body: %s", request);
+         logger.debugf("Request headers: %s", headers.getRequestHeaders());
+      }
+
+      // Extract userId from request context (set by SecureEndpointFilter after OAuth2 validation).
+      String userId = (String) requestContext.getProperty(SecureEndpointFilter.USER_ID_PROPERTY);
 
       AtomicReference<McpHandlerResult> resultRef = new AtomicReference<>();
+      long startNanos = System.nanoTime();
       try {
          // Scope the call with call + session info for those who need it.
          MethodHandlingInfo handlingInfo = new MethodHandlingInfo(
                serverRequest.remoteAddress().host(),
-               getSessionInfo(headers));
+               getSessionInfo(headers),
+               userId);
          ScopedValue.where(MethodHandlingContext.METHOD_HANDLING_INFO, handlingInfo).run(() -> {
             resultRef.set(handleMcpRequest(service, request, headers));
          });
 
          // Compose a Response based on result.
          McpHandlerResult result = resultRef.get();
+
+         // Emit audit log if enabled for this configuration.
+         emitAuditEvent(service, request, result, startNanos, serverRequest, userId);
+
          Response.ResponseBuilder responseBuilder = Response.ok(result.message());
          if (result.headers() != null) {
             result.headers().forEach((key, value) -> value.forEach(
@@ -476,5 +501,96 @@ public class McpController {
          return !configuration.excludedOperations().contains(operation.name());
       }
       return true; // No exclusions or inclusions, so all operations are exposed by default.
+   }
+
+   /**
+    * Emit an audit event asynchronously if audit logging is enabled for this service's configuration.
+    * Runs on a virtual thread to avoid impacting the request response time.
+    */
+   private void emitAuditEvent(ServiceEntry service, McpSchema.JSONRPCRequest request,
+                               McpHandlerResult result, long startNanos,
+                               HttpServerRequest serverRequest, @Nullable String userId) {
+      ConfigurationEntry configuration = gatewayRegistry.getConfiguration(service);
+      if (configuration == null || !configuration.audit()) {
+         logger.debugf("Audit logging is not enabled for config on service '%s'", service.id());
+         return;
+      }
+
+      logger.debugf("Audit logging is enabled for config on service '%s', emitting audit event", service.id());
+      // Capture duration now (before async handoff) so it reflects actual processing time.
+      long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+
+      // Capture trace context now — the span is bound to the current thread and won't be
+      // available on the virtual thread used for async emission.
+      Span currentSpan = Span.current();
+      String traceId = currentSpan.getSpanContext().isValid() ? currentSpan.getSpanContext().getTraceId() : null;
+
+      // Execute audit event sending asynchronously.
+      Thread.startVirtualThread(() -> {
+         // Capture all values needed for the audit event before going async,
+         // since request/serverRequest objects may not be safe to access later.
+         String method = request.method();
+         Object requestId = request.id();
+         Object requestParams = request.params();
+         String serviceName = service.name();
+         String serviceVersion = service.version();
+         String organizationId = service.organizationId();
+         String sourceIp = serverRequest.remoteAddress() != null ? serverRequest.remoteAddress().host() : null;
+         String sessionId = null;
+         SessionInfo sessionInfo = getSessionInfo(serverRequest);
+         if (sessionInfo != null) {
+            sessionId = sessionInfo.getId();
+         }
+
+         // Determine outcome and error code from the result.
+         String outcome = AuditEvent.OUTCOME_SUCCESS;
+         Integer errorCode = null;
+         if (result.isJSONRPCResponse() && result.message() instanceof McpSchema.JSONRPCResponse response) {
+            if (response.error() != null) {
+               outcome = AuditEvent.OUTCOME_FAILURE;
+               errorCode = response.error().code();
+            }
+         }
+
+         // Compute response content size.
+         long responseSize = 0;
+         if (result.isJSONRPCResponse() && result.message() instanceof McpSchema.JSONRPCResponse response
+               && response.result() != null) {
+            try {
+               responseSize = mapper.writeValueAsString(response.result()).length();
+            } catch (Exception _) {
+               // Serialization failed, keep 0.
+            }
+         }
+
+         // Extract target name from request params for tools/call and prompts/get.
+         String targetName = null;
+         if (requestParams != null) {
+            try {
+               McpSchema.SimpleRequest simpleRequest = mapper.convertValue(requestParams,
+                     new TypeReference<McpSchema.SimpleRequest>() {});
+               targetName = simpleRequest.name();
+            } catch (Exception _) {
+               // Not a SimpleRequest, ignore — targetName stays null.
+            }
+         }
+
+         AuditEvent event = new AuditEvent(
+               method, targetName, outcome, errorCode, durationMs,
+               serviceName, serviceVersion, organizationId,
+               requestId, sessionId, sourceIp, userId,
+               responseSize, traceId
+         );
+         auditLogger.logMcpCall(event);
+      });
+   }
+
+   @Nullable
+   private SessionInfo getSessionInfo(HttpServerRequest serverRequest) {
+      String sessionIdHeader = serverRequest.getHeader(McpSchema.HEADER_SESSION_ID);
+      if (sessionIdHeader != null && !sessionIdHeader.isEmpty()) {
+         return sessionStore.getSessionInfo(sessionIdHeader);
+      }
+      return null;
    }
 }

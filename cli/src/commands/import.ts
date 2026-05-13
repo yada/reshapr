@@ -37,6 +37,7 @@ export const importCommand = new Command('import')
   .option('--be, --backendEndpoint <backendEndpointURL>', 'Directly expose the artifact on a Gateway using a backend endpoint')
   .option('--bs, --backendSecret <backendSecretId>', 'ID of a secret to authenticate exposed MCP with backend endpoint')
   .option('--apiKey', 'Generate an API key for the configuration plan to secure the MCP endpoint')
+  .option('--audit', 'Enable audit logging for the configuration plan')
   .option('-o, --output <format>', 'Output format (json, yaml)')
   .action(async (options) => {
     if (!options.file && !options.url) {
@@ -138,7 +139,8 @@ async function exposeService(options: any, service: any) {
         backendEndpoint: options.backendEndpoint,
         backendSecretId: options.backendSecret || undefined,
         apiKey: (options.apiKey ? 'generate-me' : undefined),
-        initialAccessToken: (options.internalOAuth2 ? 'generate-me' : undefined)
+        initialAccessToken: (options.internalOAuth2 ? 'generate-me' : undefined),
+        audit: options.audit || false
       })
     });
     if (!planResponse.ok) {

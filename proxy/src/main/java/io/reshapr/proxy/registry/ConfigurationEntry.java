@@ -30,13 +30,21 @@ public record ConfigurationEntry(
       List<String> includedOperations,
       String apiKey,
       OAuth2ConfigurationEntry oauth2Configuration,
-      SecretEntry backendSecret) {
+      SecretEntry backendSecret,
+      boolean audit) {
+
+
+   public ConfigurationEntry(String id, String name, String backendEndpoint, Long backendTimeout,
+                             List<String> excludedOperations, List<String> includedOperations,
+                             String apiKey, OAuth2ConfigurationEntry oauth2Configuration, SecretEntry backendSecret) {
+      this(id, name, backendEndpoint, backendTimeout, excludedOperations, includedOperations, apiKey, oauth2Configuration, backendSecret, false);
+   }
 
    @Override
    public String toString() {
       return "ConfigurationEntry[id=" + id + ", name= " + name + ", backendEndpoint=" + backendEndpoint
             + ", excludedOperations=" + excludedOperations + ", includedOperations=" + includedOperations
-            + ", apiKey=" +  apiKeyString() + "]";
+            + ", audit=" + audit + ", apiKey=" +  apiKeyString() + "]";
    }
 
    private String apiKeyString() {

@@ -55,9 +55,9 @@ configCommand.command('list')
         const longestName = longestCPName(data); // +1 for padding
         const longestEndpoint = Math.max(...data.map((config: any) => config.backendEndpoint.length)) + 1; // +1 for padding
 
-        Logger.log(`${'ID'.padEnd(13, ' ')}  ${'NAME'.padEnd(longestName, ' ')} ${'SERVICE'.padEnd(14, ' ')} ${'BACKEND'.padEnd(longestEndpoint, ' ')} API_KEY  OAUTH2_CONFIG`);
+        Logger.log(`${'ID'.padEnd(13, ' ')}  ${'NAME'.padEnd(longestName, ' ')} ${'SERVICE'.padEnd(14, ' ')} ${'BACKEND'.padEnd(longestEndpoint, ' ')} API_KEY  OAUTH2_CONFIG  AUDIT`);
         data.forEach((config: any) => {
-          Logger.log(`${config.id}  ${config.name.padEnd(longestName, ' ')} ${config.serviceId.padEnd(14, ' ')} ${config.backendEndpoint.padEnd(longestEndpoint, ' ')} ${(config.apiKey != undefined ? 'Yes' : 'No').padEnd(8, ' ')} ${(config.oauth2Configuration != undefined ? 'Yes' : 'No').padEnd(13, ' ')}`);
+          Logger.log(`${config.id}  ${config.name.padEnd(longestName, ' ')} ${config.serviceId.padEnd(14, ' ')} ${config.backendEndpoint.padEnd(longestEndpoint, ' ')} ${(config.apiKey != undefined ? 'Yes' : 'No').padEnd(8, ' ')} ${(config.oauth2Configuration != undefined ? 'Yes' : 'No').padEnd(14, ' ')} ${config.audit ? 'Yes' : 'No'}`);
         });
       }
     }
@@ -113,6 +113,7 @@ configCommand.command('get <id>')
     } else {
       Logger.log(`OAuth2          : No`);
     }
+    Logger.log(`Audit           : ${config.audit ? 'Yes' : 'No'}`);
   });
 
 /** Create a new configuration plan */
@@ -134,6 +135,7 @@ configCommand.command('create <name>')
   .option('--io, --includedOperations [<operation1>, <operation2>]', 'Include these operations when importing service artifact (JSON array). Takes precedence over excludedOperations.')
   .option('--eo, --excludedOperations [<operation1>, <operation2>]', 'Exclude these operations when importing service artifact (JSON array). Only considered if no includedOperations.')
   .option('--apiKey', 'Generate an API key for this configuration plan to secure the MCP endpoint')
+  .option('--audit', 'Enable audit logging for this configuration plan')
   .option('-o, --output <format>', 'Output format (json, yaml)')
   .action(async (name, options) => {
     if (!options.serviceId) {
@@ -159,7 +161,8 @@ configCommand.command('create <name>')
         includedOperations: options.includedOps || undefined,
         excludedOperations: options.excludedOps || undefined,
         apiKey: (options.apiKey ? 'generate-me' : undefined),
-        initialAccessToken: (options.internalOAuth2 ? 'generate-me' : undefined)
+        initialAccessToken: (options.internalOAuth2 ? 'generate-me' : undefined),
+        audit: options.audit || false
       })
     });
     if (!response.ok) {
@@ -198,6 +201,7 @@ configCommand.command('create-oauth <name>')
   .requiredOption('--oas, --oauth2AuthorizationServers [<authorizationServer1>, <authorizationServer2>]', 'A list of OAuth2 authorization server URLs to accept tokens from')
   .requiredOption('--oju, --oauth2jwksUri <jwksUri>', 'The JWKS URI to validate OAuth2 tokens')
   .option('--osc, --oauth2Scopes [<scope1>, <scope2>]', 'A list of OAuth2 scopes to enforce presence in the access token')
+  .option('--audit', 'Enable audit logging for this configuration plan')
   .option('-o, --output <format>', 'Output format (json, yaml)')
   .action(async (name, options) => {
     if (!options.serviceId) {
@@ -228,7 +232,8 @@ configCommand.command('create-oauth <name>')
         backendTimeout: options.backendTimeout || undefined,
         includedOperations: options.includedOps || undefined,
         excludedOperations: options.excludedOps || undefined,
-        oauth2Configuration: options.oauth2Configuration
+        oauth2Configuration: options.oauth2Configuration,
+        audit: options.audit || false
       })
     });
     if (!response.ok) {

@@ -63,6 +63,9 @@ public class SecureEndpointFilter implements ContainerRequestFilter {
    private static final String MCP_PATH_PREFIX = "/mcp/";
    private static final String API_KEY_HEADER = "x-reshapr-key";
 
+   /** Request context property key for the authenticated user ID. */
+   public static final String USER_ID_PROPERTY = "reshapr.auth.userId";
+
    private static final Set<JWSAlgorithm> JWS_SUPPORTED_ALGORITHMS = Set.of(
          JWSAlgorithm.RS256,
          JWSAlgorithm.RS384,
@@ -263,15 +266,21 @@ public class SecureEndpointFilter implements ContainerRequestFilter {
             ctx.abortWith(Response.status(Response.Status.FORBIDDEN).build());
             return;
          }
-         for (String expectedScope : oauth2Config.scopes()) {
-            if (!tokenScopes.contains(expectedScope)) {
-               logger.warnf("Invalid OAuth2 token received, scope claim does not contain expected scope: '%s'", expectedScope);
-               ctx.abortWith(Response.status(Response.Status.FORBIDDEN).build());
-               return;
-            }
-         }
-      }
-   }
+          for (String expectedScope : oauth2Config.scopes()) {
+             if (!tokenScopes.contains(expectedScope)) {
+                logger.warnf("Invalid OAuth2 token received, scope claim does not contain expected scope: '%s'", expectedScope);
+                ctx.abortWith(Response.status(Response.Status.FORBIDDEN).build());
+                return;
+             }
+          }
+       }
+
+       // Store authenticated user ID (JWT subject) in request context for downstream audit use.
+       String subject = claimsSet.getSubject();
+       if (subject != null) {
+          ctx.setProperty(USER_ID_PROPERTY, subject);
+       }
+    }
 
    /** Default JOSE verifies allows only exact match on issuers. This verifier allows multiple issuers. */
    static class MultipleIssuerClaimsVerifier extends DefaultJWTClaimsVerifier<SecurityContext> {

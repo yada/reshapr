@@ -151,6 +151,7 @@ public class ConfigurationPlanManagerService {
       existingPlan.backendTimeout = configurationPlan.backendTimeout;
       existingPlan.includedOperations = configurationPlan.includedOperations;
       existingPlan.excludedOperations = configurationPlan.excludedOperations;
+      existingPlan.audit = configurationPlan.audit;
       if (backendSecretId != null) {
          logger.debugf("Setting backend secret with id %s for configuration plan %s", backendSecretId, existingPlan.name);
          existingPlan.backendSecret = secretRepository.findById(backendSecretId);
