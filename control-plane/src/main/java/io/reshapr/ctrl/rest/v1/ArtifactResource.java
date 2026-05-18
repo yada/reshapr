@@ -158,7 +158,7 @@ public class ArtifactResource {
          logger.debugf("Attaching local artifact %s with type %s", file.name(), file.contentType());
          try {
             Artifact artifact = serviceManagerService.attachArtifactFile(
-                  new AttachmentArtifactInfo(file.name(), file.uploadedFile().toFile()));
+                  new AttachmentArtifactInfo(file.fileName(), file.uploadedFile().toFile()));
             return Response.ok(v1Mappers.toResource(artifact)).build();
          } catch (Exception e) {
             logger.error("Error attaching artifact from uploaded file", e);
