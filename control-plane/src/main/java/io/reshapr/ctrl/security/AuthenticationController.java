@@ -17,8 +17,10 @@ package io.reshapr.ctrl.security;
 
 import io.reshapr.ctrl.config.AuthenticationIdentityProviderConfig;
 import io.reshapr.ctrl.model.Organization;
+import io.reshapr.ctrl.model.ServiceAccount;
 import io.reshapr.ctrl.model.User;
 import io.reshapr.ctrl.repository.OrganizationRepository;
+import io.reshapr.ctrl.repository.ServiceAccountRepository;
 import io.reshapr.ctrl.repository.UserRepository;
 import io.reshapr.ctrl.service.DependencyNotFoundException;
 import io.reshapr.ctrl.service.EntityAlreadyExistException;
@@ -37,6 +39,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -76,9 +79,12 @@ public class AuthenticationController {
 
    private final UserRepository userRepository;
    private final OrganizationRepository organizationRepository;
+   private final ServiceAccountRepository serviceAccountRepository;
 
    private final ObjectMapper objectMapper;
    private final SecureRandom secureRandom;
+
+   private KubernetesTokenVerifier kubernetesTokenVerifier;
 
    @ConfigProperty(name = "reshapr.ctrl.public-url")
    String reshaprCtrlPublicUrl;
@@ -89,15 +95,17 @@ public class AuthenticationController {
     * @param onboardingService The service to onboard new users and organization
     * @param userRepository The repository to access user data.
     * @param organizationRepository The repository to access organization data
+    * @param serviceAccountRepository The repository to access service account data.
     * @param objectMapper The ObjectMapper for JSON processing.
     */
    public AuthenticationController(AuthenticationIdentityProviderConfig oidcIdentityProviderConfig, OnboardingService onboardingService,
-                                   UserRepository userRepository, OrganizationRepository organizationRepository,
+                                   UserRepository userRepository, OrganizationRepository organizationRepository, ServiceAccountRepository serviceAccountRepository,
                                    ObjectMapper objectMapper) {
       this.oidcIdentityProviderConfig = oidcIdentityProviderConfig;
       this.onboardingService = onboardingService;
       this.userRepository = userRepository;
       this.organizationRepository = organizationRepository;
+      this.serviceAccountRepository = serviceAccountRepository;
       this.objectMapper = objectMapper;
       this.secureRandom = new SecureRandom();
    }
@@ -327,6 +335,63 @@ public class AuthenticationController {
       String token = generateTokenForUser("delegated", user, user.defaultOrganization.name);
 
       logger.infof("Delegated login token generated for user: %s (org: %s)", user.username, user.defaultOrganization.name);
+      return Response.ok(token).build();
+   }
+
+   @POST
+   @Produces(MediaType.TEXT_PLAIN)
+   @Path("/login/token/service-account")
+   public Response generateServiceAccountToken(
+         @HeaderParam("Authorization") String authorizationHeader,
+         @HeaderParam("x-reshapr-organization") String targetOrganization) {
+      logger.infof("Service account login token requested for organization: %s", targetOrganization);
+
+      // Check lazy initialization of KubernetesTokenVerifier.
+      if (kubernetesTokenVerifier == null) {
+         kubernetesTokenVerifier = KubernetesTokenVerifier.create();
+      }
+
+      // 1. Extract the service account name from the Authorization header.
+      String k8sToken = authorizationHeader.substring("Bearer ".length());
+      var k8sIdentity = kubernetesTokenVerifier.verify(k8sToken)
+            .orElse(null);
+      if (k8sIdentity == null) {
+         logger.warnf("Invalid Kubernetes token: '%s'", k8sToken);
+         return Response.status(Response.Status.UNAUTHORIZED).build();
+      }
+
+      // 2. Check if the service account is valid.
+      String k8sSubject = k8sIdentity.namespace() + ":" + k8sIdentity.serviceAccountName();
+      ServiceAccount sa  = serviceAccountRepository.findByK8sSubject(k8sSubject);
+      if (sa == null || !sa.isValid()) {
+         logger.warnf("Unknown or inactive service account: '%s'", k8sSubject);
+         return Response.status(Response.Status.FORBIDDEN)
+               .entity("Unknown or inactive service account: " + k8sSubject).build();
+      }
+
+      // 3. Check if the service account has access to the target organization.
+      Organization org = organizationRepository.findByName(targetOrganization);
+      if (org == null) {
+         logger.warnf("Requested organization '%s' not found", targetOrganization);
+         return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      if (!sa.allowedOrganizations.contains("*") && !sa.allowedOrganizations.contains(targetOrganization)) {
+         logger.warnf("Service account '%s' has not access to the request organization", sa.name, targetOrganization);
+         return Response.status(Response.Status.FORBIDDEN)
+               .entity("Service account does not have access to the requested organization").build();
+      }
+
+      // 4. Generate a JWT token for the service account.
+      String token = Jwt.issuer("https://app.reshapr.io")
+            .subject("sa:" + sa.name)
+            .upn("sa:" + sa.name)
+            .groups("service-account")
+            .expiresIn(Duration.ofMinutes(5))
+            .claim("org", targetOrganization)
+            .claim("sa", true)
+            .claim("k8s_ns", k8sIdentity.namespace())
+            .sign();
+
       return Response.ok(token).build();
    }
 
