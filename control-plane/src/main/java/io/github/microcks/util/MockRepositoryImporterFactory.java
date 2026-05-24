@@ -87,7 +87,8 @@ public class MockRepositoryImporterFactory {
       if (line.startsWith("syntax = \"proto3\";") || line.startsWith("syntax=\"proto3\";")) {
          log.info("Found a syntax = proto3 pragma in file so assuming it's a GRPC Protobuf spec to import");
          return new ProtobufImporter(mockRepository.getPath(), referenceResolver);
-      } else if (line.startsWith("schema {") || line.contains("type Query {") || line.contains("type Mutation {")
+      } else if (line.startsWith("schema {") || line.contains("type Query {")
+            || line.contains("type Query implements ") || line.contains("type Mutation {")
             || line.startsWith("# microcksId:")) {
          log.info("Found query, mutation or microcksId: pragma in file so assuming it's a GraphQL schema to import");
          return new GraphQLImporter(mockRepository.getPath());
