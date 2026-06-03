@@ -12,27 +12,6 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
 paths:
-  /switchOrganization/{organizationId}:
-    post:
-      parameters:
-      - name: organizationId
-        description: Identifier of the user organization to switch to
-        schema:
-          type: string
-        in: path
-        required: true
-      responses:
-        "401":
-          description: User authentication failed
-        "200":
-          content:
-            text/plain:
-              schema:
-                type: string
-          description: Authentication successful. Return the base 64 encoded JWT token.
-      security:
-      - jwt-bearer: []
-      operationId: switchOrganization
   /auth/login/reshapr:
     post:
       requestBody:
@@ -53,6 +32,50 @@ paths:
           description: User authentication failed
       operationId: loginWithUsernamePassword
       summary: Authenticate user using internal datastore
+  /auth/login/oidc:
+    get:
+      operationId: loginWithOIDC
+      summary: Authenticate user using OIDC provider. The OIDC provider should be configured in Reshapr control plane.
+      parameters:
+        - name: redirect_uri
+          description: The redirect URI to redirect the user to after authentication
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "303":
+          description: Redirect the user to the OIDC configured authentication endpoint
+  /auth/callback/oidc:
+    get:
+      operationId: callbackOIDC
+      summary: Callback endpoint for OIDC provider. The OIDC provider should be configured in Reshapr control plane.
+      parameters:
+        - name: code
+          description: The authorization code returned by the OIDC provider after successful authentication
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          description: The state parameter to prevent CSRF attacks
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: First time authentication successful. Return the page to finalize the onboarding process.
+        "401":
+          description: User authentication failed (probably because of a failure in getting/validating access token)
+        "303":
+          description: |-
+            Authentication successful. Redirect the user to the original redirect_uri provided at login. 
+            Token is provided as the `token` query parameter.
   /auth/login/token:
     post:
       requestBody:
@@ -80,6 +103,55 @@ paths:
       - admin-api-key: []
       operationId: generateTokenForDelegatedAuthent
       summary: Generate a token on behalf of already authenticated user
+  /auth/login/service-account:
+    post:
+      parameters:
+        - name: x-reshapr-organization
+          description: Identifier of the targeted organization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Token generation successful. Return the base 64 encoded JWT
+            token.
+        "401":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Specified authorization is not valie
+      security:
+        - kubernetes-bearer: []
+      operationId: generateTokenForServiceAccount
+      summary: Generate a token for a ServiceAccount to impersonate an organization
+  /auth/switchOrganization/{organizationId}:
+    post:
+      operationId: switchOrganization
+      summary: Switch the authenticated user to a different organization. User must be member of the targeted organization.
+      parameters:
+        - name: organizationId
+          description: Identifier of the user organization to switch to
+          schema:
+            type: string
+          in: path
+          required: true
+      responses:
+        "401":
+          description: User authentication failed
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Authentication successful. Return the base 64 encoded JWT token.
+      security:
+        - jwt-bearer: [ ]
 components:
   schemas:
     LoginRequest:
@@ -114,3 +186,7 @@ components:
       description: Control plane administration API key transferred as HTTP header
       name: x-reshapr-api-key
       in: header
+    kubernetes-bearer:
+      scheme: bearer
+      type: http
+      description: Bearer token acquired from the Kubernetes API server for a ServiceAccount

@@ -15,6 +15,7 @@
  */
 package io.reshapr.ctrl.security;
 
+import io.quarkus.security.identity.SecurityIdentity;
 import io.reshapr.ctrl.config.AuthenticationIdentityProviderConfig;
 import io.reshapr.ctrl.model.Organization;
 import io.reshapr.ctrl.model.ServiceAccount;
@@ -45,6 +46,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
@@ -397,26 +399,35 @@ public class AuthenticationController {
 
    @POST
    @Authenticated
-   @Path("switchOrganization/{organizationId}")
-   public Response switchOrganization(@PathParam("organizationId") String organizationId) {
-      logger.infof("AuthenticationController.switchOrganization() called with organizationId: %s", organizationId);
+   @Path("/switchOrganization/{organizationId}")
+   public Response switchOrganization(@Context SecurityIdentity securityIdentity,
+         @PathParam("organizationId") String organizationId) {
+      logger.infof("switchOrganization() called with organizationId: %s", organizationId);
 
-//      // Get the current user from the security context
-//      User currentUser = userRepository.getCurrentUser();
-//      if (currentUser == null) {
-//         logger.warn("No authenticated user found.");
-//         return Response.status(Response.Status.UNAUTHORIZED).build();
-//      }
-//
-//      // Switch the user's default organization
-//      currentUser.setDefaultOrganization(organizationId);
-//      userRepository.update(currentUser);
-//
-//      // Generate a new token for the user with the updated organization
-//      String token = generateTokenForUser(RESHAPR_IDENTITY_PROVIDER, currentUser);
-//      logger.infof("Switched organization for user: %s to %s", currentUser.username, organizationId);
+      // Get the current user from the security context.
+      String username = securityIdentity.getPrincipal().getName();
+      User currentUser = userRepository.findByUsername(username);
 
-      return Response.ok().build();
+      if (currentUser == null) {
+         logger.warn("No authenticated user found.");
+         return Response.status(Response.Status.UNAUTHORIZED).build();
+      }
+
+      // Check if the user is part of the requested organization.
+      Organization organization = currentUser.organizations.stream()
+            .filter(org -> org.name.equals(organizationId))
+            .findFirst()
+            .orElse(null);
+      if (organization == null) {
+         logger.warnf("User %s is not part of the requested organization %s", username, organizationId);
+         return Response.status(Response.Status.FORBIDDEN).entity("User is not part of the requested organization").build();
+      }
+
+      // Generate a new token for the user with the updated organization
+      String token = generateTokenForUser(RESHAPR_IDENTITY_PROVIDER, currentUser, organizationId);
+      logger.infof("Switched organization for user: %s to %s", currentUser.username, organizationId);
+
+      return Response.ok(token).build();
    }
 
    public record LoginRequest(String username, String password) {}
