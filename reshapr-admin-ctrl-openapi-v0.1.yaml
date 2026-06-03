@@ -12,6 +12,22 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
 paths:
+  /admin/users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      responses:
+        "201":
+          description: The User has been registered in control plane
+        "409":
+          description: A User with this username already exist
+      security:
+        - admin-api-key: [ ]
+      operationId: createUser
   /admin/users/{username}/organization:
     post:
       requestBody:
@@ -42,22 +58,6 @@ paths:
         type: string
       in: path
       required: true
-  /admin/users:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-        required: true
-      responses:
-        "201":
-          description: The User has been registered in control plane
-        "409":
-          description: A User with this username already exist
-      security:
-      - admin-api-key: []
-      operationId: createUser
   /admin/users/{username}/organization/{organizationName}:
     put:
       requestBody:
@@ -90,6 +90,27 @@ paths:
         type: string
       in: path
       required: true
+  /admin/users/{username}/organization/{organizationName}/owner:
+    put:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: User has been assigned as organization owner
+      security:
+        - admin-api-key: [ ]
+      operationId: updateOrganizationOwner
+    parameters:
+      - name: username
+        description: The unique username of user to manage organization for
+        in: path
+        required: true
+      - name: organizationName
+        description: The unique username of organization
+        in: path
+        required: true
   /admin/users/{username}/memberships:
     put:
       requestBody:
@@ -121,6 +142,83 @@ paths:
       description: The name of user to manage memberships for
       in: path
       required: true
+  /admin/organizations:
+    get:
+      operationId: getOrganizations
+      summary: Get the list of all organizations in control plane
+      parameters:
+        - name: page
+          in: query
+          description: The page number to retrieve (0-based)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: The number of items per page
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+          description: The list of organizations in control plane
+      security:
+        - admin-api-key: []
+    post:
+      operationId: createOrganization
+      summary: Create a new organization without assigning owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationRequest'
+        required: true
+      responses:
+        "201":
+          description: Organization has been created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationRequest'
+        "409":
+          description: Organization with this name already exist
+      security:
+        - admin-api-key: []
+  /admin/organizations/{organizationName}/owner:
+    put:
+      operationId: updateOrganizationOwner
+      summary: Update the owner of an organization
+      parameters:
+        - name: organizationName
+          in: path
+          description: The unique name of organization to update owner for
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              description: The unique username of user to assign as owner
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: User has been assigned as organization owner
+        "404":
+          description: The user with name is unknown or organization with name is unknown
+      security:
+        - admin-api-key: []
   /admin/quotas/organization/{organizationName}:
     get:
       responses:
@@ -222,27 +320,6 @@ paths:
         type: string
       in: path
       required: true
-  /admin/users/{username}/organization/{organizationName}/owner:
-    put:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-          description: User has been assigned as organization owner
-      security:
-      - admin-api-key: []
-      operationId: updateOrganizationOwner
-    parameters:
-    - name: username
-      description: The unique username of user to manage organization for
-      in: path
-      required: true
-    - name: organizationName
-      description: The unique username of organization
-      in: path
-      required: true
 components:
   schemas:
     UserRequest:
@@ -284,22 +361,11 @@ components:
       description: An organization within the control plane
       type: object
       allOf:
-      - required:
-        - owner
-        - id
-        type: object
+      - type: object
         properties:
-          owner:
-            $ref: '#/components/schemas/User'
-            description: The User owning this origanization
-          id:
-            description: The organization unique identifier
+          ownerUsername:
             type: string
-          members:
-            description: The non-owner members of this organization
-            type: array
-            items:
-              $ref: '#/components/schemas/User'
+            description: The User owning this organization
       - $ref: '#/components/schemas/OrganizationRequest'
     Quota:
       description: A quota that defines limits on the usage of a specific metric for

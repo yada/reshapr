@@ -106,7 +106,7 @@ public class OnboardingService {
       Organization organization = organizationRepository.findByName(organizationInfo.name());
       if (organization != null) {
          logger.warnf("Organization with name %s already exists", organizationInfo.name());
-         throw new DependencyNotFoundException("Organization " + organizationInfo.name() + " already exists");
+         throw new EntityAlreadyExistException("Organization " + organizationInfo.name() + " already exists");
       }
 
       // Create and persist organization.
@@ -126,6 +126,26 @@ public class OnboardingService {
          user.defaultOrganization = organization;
       }
       userRepository.persistAndFlush(user);
+      return organization;
+   }
+
+   @Transactional
+   public Organization createUnassignedOrganization(OrganizationInfo organizationInfo) throws EntityAlreadyExistException {
+      logger.infof("Creating organization %s", organizationInfo.name());
+
+      // Check if organization already exists.
+      Organization organization = organizationRepository.findByName(organizationInfo.name());
+      if (organization != null) {
+         logger.warnf("Organization with name %s already exists", organizationInfo.name());
+         throw new EntityAlreadyExistException("Organization " + organizationInfo.name() + " already exists");
+      }
+
+      // Create and persist organization.
+      organization = new Organization();
+      organization.name = organizationInfo.name();
+      organization.description = organizationInfo.description();
+      organization.icon = organizationInfo.icon();
+      organizationRepository.persistAndFlush(organization);
       return organization;
    }
 
