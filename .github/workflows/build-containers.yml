@@ -90,6 +90,22 @@ jobs:
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
           tags: quay.io/reshapr/reshapr-proxy:${{env.IMAGE_TAG}},docker.io/reshapr/reshapr-proxy:${{env.IMAGE_TAG}}
 
+      - name: Build and push container image for web-ui
+        id: build-and-push-ui
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: ${{github.workspace}}/web-ui
+          sbom: true
+          push: true
+          provenance: mode=max
+          platforms: linux/amd64,linux/arm64
+          builder: buildx-multi-arch
+          file: web-ui/Dockerfile
+          labels: |
+            org.opencontainers.image.revision=${GITHUB_SHA}
+            org.opencontainers.image.created=${{ steps.date.outputs.date }}
+          tags: quay.io/reshapr/reshapr-ui:${{env.IMAGE_TAG}},docker.io/reshapr/reshapr-ui:${{env.IMAGE_TAG}}
+
       - name: Sign the control plane image with GitHub OIDC Token
         env:
           DIGEST: ${{ steps.build-and-push-ctrl.outputs.digest }}
@@ -105,6 +121,17 @@ jobs:
         env:
           DIGEST: ${{ steps.build-and-push-proxy.outputs.digest }}
           TAGS: quay.io/reshapr/reshapr-proxy:${{env.IMAGE_TAG}} docker.io/reshapr/reshapr-proxy:${{env.IMAGE_TAG}}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
+          done
+          cosign sign --new-bundle-format=false --use-signing-config=false --yes ${images}
+
+      - name: Sign the web-ui image with GitHub OIDC Token
+        env:
+          DIGEST: ${{ steps.build-and-push-ui.outputs.digest }}
+          TAGS: quay.io/reshapr/reshapr-ui:${{env.IMAGE_TAG}} docker.io/reshapr/reshapr-ui:${{env.IMAGE_TAG}}
         run: |
           images=""
           for tag in ${TAGS}; do
