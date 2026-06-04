@@ -59,4 +59,8 @@ public class SessionInfo {
    public String getSecretValue(SecretEntry secretEntry) {
       return elicitationSecretValue.get(secretEntry);
    }
+
+   public void removeSecretValue(SecretEntry secretEntry) {
+      elicitationSecretValue.remove(secretEntry);
+   }
 }

@@ -192,7 +192,7 @@ secretCommand.command('create <name>')
 /* Create an elicitation secret with name */
 secretCommand.command('create-elicitation <name>')
   .description('Create a new Elicitation secret')
-  .option('-d, --description <description>', 'Description for the Elicitationsecret')
+  .option('-d, --description <description>', 'Description for the Elicitation secret')
   .option('-t, --token <token>', 'Token for the Elicitation secret (if sensitive data access is needed)')
   .option('--oc, --oauth2ClientID <oauth2ClientID>', 'The ClientID for the backend Authorization service (if OAuth2 is used)')
   .option('--ocs, --oauth2ClientSecret <oauth2ClientSecret>', 'The ClientSecret for the backend Authorization service (if OAuth2 is used and if needed by the Authorization service)')

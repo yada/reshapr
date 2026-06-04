@@ -177,6 +177,16 @@ public class GrpcProxyService {
          String message = sre.getMessage() != null ? sre.getMessage() : sre.getStatus().getCode().name();
          logger.errorf("gRPC proxy error calling backend '%s' [%s -> HTTP %d]: %s",
                configuration.backendEndpoint(), sre.getStatus().getCode(), httpStatus, message);
+
+         // If authorization failed, it can be because of a bad elicitation secret value. We need to evict it.
+         if (httpStatus == 401 && configuration.backendSecret() != null && configuration.backendSecret().useElicitation()) {
+            logger.warnf("Proxy authorization failed with 401, evicting elicitation secret '%s' from session", configuration.backendSecret().name());
+            SessionInfo sessionInfo = MethodHandlingContext.getSessionInfo();
+            if (sessionInfo != null) {
+               sessionInfo.removeSecretValue(configuration.backendSecret());
+            }
+         }
+
          return new BackendResponse(httpStatus, message.getBytes(StandardCharsets.UTF_8), Map.of());
       } finally {
          // Shutdown the channel to release resources.

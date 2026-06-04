@@ -109,6 +109,15 @@ public class ProxyService {
             logger.debugf("Proxy response body: '%s'", new String(response.body(), StandardCharsets.UTF_8));
          }
 
+         // If authorization failed, it can be because of a bad elicitation secret value. We need to evict it.
+         if (response.statusCode() == 401 && configuration.backendSecret() != null && configuration.backendSecret().useElicitation()) {
+            logger.warnf("Proxy authorization failed with 401, evicting elicitation secret '%s' from session", configuration.backendSecret().name());
+            SessionInfo sessionInfo = MethodHandlingContext.getSessionInfo();
+            if (sessionInfo != null) {
+               sessionInfo.removeSecretValue(configuration.backendSecret());
+            }
+         }
+
          // If authorization failed with empty body, explanations may be in the WWW-Authenticate header.
          if (response.statusCode() == 401 && response.body().length == 0 && response.headers().firstValue("www-authenticate").isPresent()) {
             return new BackendResponse(response.statusCode(),
