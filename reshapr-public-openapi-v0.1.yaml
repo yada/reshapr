@@ -453,6 +453,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Secret'
           description: Secret is successfully created
+        "409":
+          description: Secret with this name already exists in the organization
       security:
       - jwt-bearer: []
       operationId: createSecret

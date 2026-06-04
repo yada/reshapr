@@ -160,8 +160,8 @@ secretCommand.command('create <name>')
     if (options.certificate) {
       // Read the certificate file and put it into a string.
       if (!fs.existsSync(options.certificate)) {
-          Logger.error(`Certificate file not found: ${options.certificate}`);
-          process.exit(1);
+        Logger.error(`Certificate file not found: ${options.certificate}`);
+        process.exit(1);
       }
       secret.certPem = fs.readFileSync(options.certificate, 'utf8');
     }
@@ -176,8 +176,12 @@ secretCommand.command('create <name>')
     });
 
     if (!response.ok) {
+      if (response.status === 409) {
+        Logger.error(`A secret with the name "${name}" already exists. Please choose a different name.`);
+      } else {
         Logger.error('Creating secret failed: ' + response.statusText);
-        process.exit(1);
+      }
+      process.exit(1);
     }
 
     const data = await response.json();
@@ -229,8 +233,8 @@ secretCommand.command('create-elicitation <name>')
     });
 
     if (!response.ok) {
-        Logger.error('Creating secret failed: ' + response.statusText);
-        process.exit(1);
+      Logger.error('Creating secret failed: ' + response.statusText);
+      process.exit(1);
     }
 
     const data = await response.json();
@@ -298,8 +302,8 @@ secretCommand.command('delete <id>')
         }
     });
     if (!response.ok) {
-        Logger.error('Deleting secret failed: ' + response.statusText);
-        process.exit(1);
+      Logger.error('Deleting secret failed: ' + response.statusText);
+      process.exit(1);
     }
     Logger.success(`Secret deleted successfully: ${id}`);
 });
