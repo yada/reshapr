@@ -6,11 +6,28 @@
 
 <div class="row">
   <div class="col-6 flex-column">
-    <form class="mt-4" method="post" action="/elicitation/complete">
+    <form class="mt-4" method="post" action="/elicitation/complete" id="elicitationForm">
       <input type="hidden" name="elicitationId" value="{elicitationInfo.id}"/>
       <div class="mb-3">
-        <label for="token" class="form-label">{elicitationInfo.secretEntry.tokenHeader}</label>
-        <input type="password" class="form-control" id="token" name="token" aria-describedby="tokenHelp">
+        <label for="tokenValue" class="form-label">{elicitationInfo.secretEntry.tokenHeader}</label>
+        {#if elicitationInfo.secretEntry.tokenHeader.equalsIgnoreCase("Authorization")}
+        <div class="input-group">
+          <select class="form-select flex-grow-0 w-auto" id="tokenType">
+            <option value="" selected>(none)</option>
+            <option value="Bearer">Bearer</option>
+            <option value="Basic">Basic</option>
+            <option value="Digest">Digest</option>
+          </select>
+          <input type="password" class="form-control" id="tokenValue" aria-describedby="tokenHelp">
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()" id="togglePwdBtn" aria-label="Show/Hide token"><span class="bi-eye-slash"></span></button>
+        </div>
+        {#else}
+        <div class="input-group">
+          <input type="password" class="form-control" id="tokenValue" aria-describedby="tokenHelp">
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()" id="togglePwdBtn" aria-label="Show/Hide token"><span class="bi-eye-slash"></span></button>
+        </div>
+        {/if}
+        <input type="hidden" name="token" id="token">
         <div id="tokenHelp" class="form-text">The token needed to access {elicitationInfo.backendEndpoint}</div>
       </div>
       <div class="mb-0 d-flex justify-content-end form-check">
@@ -24,5 +41,20 @@
         <button type="submit" class="btn btn-primary">Submit</button>
       </div>
     </form>
+    <script>
+      function togglePassword() {
+        var inp = document.getElementById('tokenValue');
+        var icon = document.querySelector('#togglePwdBtn span');
+        var show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        icon.className = show ? 'bi-eye' : 'bi-eye-slash';
+      }
+      document.getElementById('elicitationForm').addEventListener('submit', function() {
+        var val = document.getElementById('tokenValue').value;
+        var sel = document.getElementById('tokenType');
+        var prefix = sel ? sel.value : '';
+        document.getElementById('token').value = prefix ? prefix + ' ' + val : val;
+      });
+    </script>
   </div>
 </div>
