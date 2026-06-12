@@ -25,6 +25,7 @@ import io.reshapr.discovery.exposition.v1.ExpositionDiscoveryRequest;
 import io.reshapr.discovery.exposition.v1.ExpositionDiscoveryResponse;
 import io.reshapr.discovery.exposition.v1.ExpositionDiscoveryServiceGrpc;
 import io.reshapr.discovery.exposition.v1.MutinyExpositionDiscoveryServiceGrpc;
+import io.reshapr.json.ObjectMapperFactory;
 import io.reshapr.proxy.mcp.WorkCache;
 import io.reshapr.proxy.registry.ArtifactEntry;
 import io.reshapr.proxy.registry.ArtifactEntryType;
@@ -35,8 +36,6 @@ import io.reshapr.proxy.registry.ResourceEntry;
 import io.reshapr.proxy.registry.ServiceEntry;
 import io.reshapr.proxy.registry.ToolEntry;
 import io.reshapr.proxy.security.GrpcAuthClientInterceptor;
-
-import io.github.microcks.util.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

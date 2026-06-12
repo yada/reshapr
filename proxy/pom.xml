@@ -13,7 +13,6 @@
   <name>Reshapr Proxy</name>
 
   <properties>
-    <microcks.version>1.14.0</microcks.version>
     <mapstruct.version>1.6.3</mapstruct.version>
     <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
     <quarkus-web-bundler.version>1.9.3</quarkus-web-bundler.version>
@@ -32,21 +31,7 @@
       <artifactId>reshapr-commons</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.github.microcks</groupId>
-      <artifactId>microcks-util</artifactId>
-      <version>${microcks.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.avro</groupId>
-          <artifactId>avro</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.graphql-java</groupId>
-          <artifactId>java-dataloader</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-services</artifactId>

@@ -15,6 +15,8 @@
  */
 package io.reshapr.proxy.mcp.converters;
 
+import io.reshapr.json.JsonNodeConverter;
+import io.reshapr.json.ObjectMapperFactory;
 import io.reshapr.proxy.mcp.McpSchema;
 import io.reshapr.proxy.mcp.WorkCache;
 import io.reshapr.proxy.proxy.BackendResponse;
@@ -23,6 +25,7 @@ import io.reshapr.proxy.registry.ArtifactEntry;
 import io.reshapr.proxy.registry.ConfigurationEntry;
 import io.reshapr.proxy.registry.OperationEntry;
 import io.reshapr.proxy.registry.ServiceEntry;
+import io.reshapr.proxy.util.URIBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -30,10 +33,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import io.github.microcks.util.ObjectMapperFactory;
-import io.github.microcks.util.URIBuilder;
-import io.github.microcks.util.openapi.OpenAPISchemaValidator;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nullable;
 import org.jboss.logging.Logger;
@@ -48,8 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.github.microcks.util.JsonSchemaValidator.*;
-import static io.github.microcks.util.JsonSchemaValidator.JSON_SCHEMA_REQUIRED_ELEMENT;
+import static io.reshapr.json.JsonSchemaElements.*;
 
 /**
  * Implementation of McpToolConverter for OpenAPI services.
@@ -225,7 +223,7 @@ public class OpenAPIMcpToolConverter extends McpToolConverter {
 
       // Compute new value to cache.
       logger.debugf("Need to build the SchemaNode for service '%s'", service.id());
-      JsonNode schemaNode = OpenAPISchemaValidator.getJsonNodeForSchema(artifact.content());
+      JsonNode schemaNode = JsonNodeConverter.getJsonNode(artifact.content());
       workCache.set(major, minor, schemaNode);
       return schemaNode;
    }

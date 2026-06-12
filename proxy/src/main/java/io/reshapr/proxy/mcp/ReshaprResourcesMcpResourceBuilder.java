@@ -15,6 +15,7 @@
  */
 package io.reshapr.proxy.mcp;
 
+import io.reshapr.json.ObjectMapperFactory;
 import io.reshapr.proxy.proxy.BackendResponse;
 import io.reshapr.proxy.proxy.ContentUtil;
 import io.reshapr.proxy.proxy.ProxyService;
@@ -22,8 +23,6 @@ import io.reshapr.proxy.registry.ArtifactEntry;
 import io.reshapr.proxy.registry.ArtifactEntryType;
 import io.reshapr.proxy.registry.ConfigurationEntry;
 import io.reshapr.proxy.registry.ServiceEntry;
-
-import io.github.microcks.util.ObjectMapperFactory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;

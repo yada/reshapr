@@ -13,7 +13,6 @@
   <name>Reshapr Control Plane</name>
 
   <properties>
-    <microcks.version>1.14.0</microcks.version>
     <json-schema-validator.version>1.5.6</json-schema-validator.version>
     <protoc-jar.version>3.21.8</protoc-jar.version>
     <hypersistence-tsid.version>2.1.4</hypersistence-tsid.version>
@@ -33,17 +32,6 @@
       <groupId>io.reshapr</groupId>
       <artifactId>reshapr-commons</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.microcks</groupId>
-      <artifactId>microcks-model</artifactId>
-      <version>${microcks.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-data-mongodb</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.github.microcks</groupId>

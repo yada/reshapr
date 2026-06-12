@@ -52,9 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.github.microcks.util.JsonSchemaValidator.*;
-import static io.github.microcks.util.graphql.JsonSchemaBuilderQueryVisitor.JSON_SCHEMA_ENUM;
-import static io.github.microcks.util.graphql.JsonSchemaBuilderQueryVisitor.JSON_SCHEMA_TYPE;
+import static io.reshapr.json.JsonSchemaElements.*;
 
 /**
  * Implementation of McpToolConverter for GraphQL services.
@@ -97,7 +95,7 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
          if (operationDefinition != null) {
             // #1 Look for a description in the operation definition.
             if (operationDefinition.getDescription() != null) {
-               return operationDefinition.getDescription().content;
+               return operationDefinition.getDescription().content.trim();
             } else if (operationDefinition.getComments() != null && !operationDefinition.getComments().isEmpty()) {
                // #2 Look for comments in the operation definition.
                StringBuilder result = new StringBuilder();
@@ -188,7 +186,7 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
       ArrayNode requiredPropertiesNode = mapper.createArrayNode();
 
       // Initialize input schema with empty object.
-      inputSchemaNode.put(JSON_SCHEMA_TYPE, "object");
+      inputSchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, JSON_SCHEMA_OBJECT_TYPE);
       inputSchemaNode.set(JSON_SCHEMA_PROPERTIES_ELEMENT, schemaPropertiesNode);
       inputSchemaNode.set(JSON_SCHEMA_REQUIRED_ELEMENT, requiredPropertiesNode);
       inputSchemaNode.put(JSON_SCHEMA_ADD_PROPERTIES_ELEMENT, false);
@@ -250,10 +248,10 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
       if (isScalarType(graphqlDocument, propertyTypeInfo.getName())) {
          ObjectNode propertySchemaNode = mapper.createObjectNode();
          switch (propertyTypeInfo.getName()) {
-            case "Int" -> propertySchemaNode.put(JSON_SCHEMA_TYPE, "integer");
-            case "Float" -> propertySchemaNode.put(JSON_SCHEMA_TYPE, "number");
-            case "Boolean" -> propertySchemaNode.put(JSON_SCHEMA_TYPE, "boolean");
-            default -> propertySchemaNode.put(JSON_SCHEMA_TYPE, "string");
+            case "Int" -> propertySchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, "integer");
+            case "Float" -> propertySchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, "number");
+            case "Boolean" -> propertySchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, "boolean");
+            default -> propertySchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, "string");
          }
 
          if (propertyName != null) {
@@ -272,7 +270,7 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
          ObjectNode arraySchemaNode = mapper.createObjectNode();
          ObjectNode subitemsNode = mapper.createObjectNode();
 
-         arraySchemaNode.put(JSON_SCHEMA_TYPE, "array");
+         arraySchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, JSON_SCHEMA_ARRAY_TYPE);
          arraySchemaNode.set(JSON_SCHEMA_ITEMS_ELEMENT, subitemsNode);
          propertiesNode.set(propertyName, arraySchemaNode);
 
@@ -282,12 +280,12 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
          EnumTypeDefinition enumTypeDefinition = getEnumTypeDefinition(graphqlDocument, propertyTypeInfo.getName());
          if (enumTypeDefinition != null) {
             ObjectNode enumSchemaNode = mapper.createObjectNode();
-            enumSchemaNode.put(JSON_SCHEMA_TYPE, "string");
+            enumSchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, "string");
             ArrayNode enumValuesNode = mapper.createArrayNode();
             for (EnumValueDefinition valueDef : enumTypeDefinition.getEnumValueDefinitions()) {
                enumValuesNode.add(valueDef.getName());
             }
-            enumSchemaNode.set(JSON_SCHEMA_ENUM, enumValuesNode);
+            enumSchemaNode.set(JSON_SCHEMA_ENUM_TYPE, enumValuesNode);
             if (propertyName != null) {
                propertiesNode.set(propertyName, enumSchemaNode);
             } else {
@@ -301,7 +299,7 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
             ObjectNode subpropertiesNode = mapper.createObjectNode();
             ArrayNode requiredSubpropertiesNode = mapper.createArrayNode();
 
-            subschemaNode.put(JSON_SCHEMA_TYPE, "object");
+            subschemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, JSON_SCHEMA_OBJECT_TYPE);
             subschemaNode.set(JSON_SCHEMA_PROPERTIES_ELEMENT, subpropertiesNode);
             subschemaNode.set(JSON_SCHEMA_REQUIRED_ELEMENT, requiredSubpropertiesNode);
             subschemaNode.put(JSON_SCHEMA_ADD_PROPERTIES_ELEMENT, false);
@@ -341,7 +339,7 @@ public class GraphQLMcpToolConverter extends McpToolConverter {
       propertiesNode.set(RELATION_PREFIX + relationDef.getName(), propertySchemaNode);
 
       // Now take care of its properties
-      propertySchemaNode.put(JSON_SCHEMA_TYPE, "object");
+      propertySchemaNode.put(JSON_SCHEMA_TYPE_ELEMENT, "object");
       propertySchemaNode.set(JSON_SCHEMA_PROPERTIES_ELEMENT, subpropertiesNode);
       propertySchemaNode.set(JSON_SCHEMA_REQUIRED_ELEMENT, requiredSubpropertiesNode);
       propertySchemaNode.put(JSON_SCHEMA_ADD_PROPERTIES_ELEMENT, false);

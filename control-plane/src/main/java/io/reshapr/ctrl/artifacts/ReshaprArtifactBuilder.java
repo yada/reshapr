@@ -1,0 +1,210 @@
+/*
+ * Copyright The Reshapr Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.reshapr.ctrl.artifacts;
+
+import io.reshapr.ctrl.model.Artifact;
+import io.reshapr.ctrl.model.ArtifactType;
+import io.reshapr.json.ObjectMapperFactory;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.networknt.schema.JsonMetaSchema;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
+import org.jboss.logging.Logger;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URI;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * A utility class for building and validating Reshapr specific artifacts.
+ * We're using JSON Schema validation provided by networknt library.
+ * @author laurent
+ */
+public class ReshaprArtifactBuilder {
+
+   /** Get a JBoss logging logger. */
+   private static final Logger logger = Logger.getLogger(ReshaprArtifactBuilder.class);
+
+   private static final Map<String, String> KIND_VERSIONS_SCHEMAS = Map.of(
+         "Prompts-reshapr.io/v1alpha1", "/schemas/Prompts-v1alpha1-schema.json",
+         "CustomTools-reshapr.io/v1alpha1", "/schemas/CustomTools-v1alpha1-schema.json",
+         "Resources-reshapr.io/v1alpha1", "/schemas/Resources-v1alpha1-schema.json",
+         "ToolsOutputFilters-reshapr.io/v1alpha1", "/schemas/ToolsOutputFilters-v1alpha1-schema.json"
+   );
+
+   private static final Map<String, ArtifactType> KIND_VERSIONS_TYPES = Map.of(
+         "Prompts-reshapr.io/v1alpha1", ArtifactType.RESHAPR_PROMPTS,
+         "CustomTools-reshapr.io/v1alpha1", ArtifactType.RESHAPR_CUSTOM_TOOLS,
+         "Resources-reshapr.io/v1alpha1", ArtifactType.RESHAPR_RESOURCES,
+         "ToolsOutputFilters-reshapr.io/v1alpha1", ArtifactType.RESHAPR_TOOLS_OUTPUT_FILTERS
+   );
+
+   private static final ObjectMapper SCHEMA_MAPPER = new ObjectMapper()
+         .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+         .enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN).enable(SerializationFeature.INDENT_OUTPUT);
+
+
+   private ReshaprArtifactBuilder() {
+      // Hide constructor for this utility class.
+   }
+
+   /** A thin wrapper around Artifact model and basic service name and version information. */
+   public record ArtifactWithServiceRef(Artifact artifact, String serviceName, String serviceVersion) {
+   }
+
+   /**
+    * Parse and validate a Reshapr artifact from a file.
+    * @param name the name to assign to the artifact
+    * @param artifactFile the artifact file
+    * @return an ArtifactWithServiceRef containing the parsed Artifact and service references
+    * @throws ReshaprArtifactException in case of parsing or validation errors
+    */
+   public static ArtifactWithServiceRef parseArtifact(String name, File artifactFile) throws ReshaprArtifactException {
+      // Initialize an empty Artifact.
+      Artifact artifact = new Artifact();
+      artifact.name = name;
+      artifact.sourceArtifact = name;
+
+      // Assume YAML by default.
+      boolean isYaml = true;
+
+      try (BufferedReader reader = new BufferedReader(new FileReader(artifactFile))) {
+         StringBuilder contentBuilder = new StringBuilder();
+
+         String line;
+         int lineNumber = 0;
+         // We must go through the file line by line to determine if it's JSON or YAML.
+         while ((line = reader.readLine()) != null) {
+            // Only treat as JSON if the very first line starts with { or [
+            if (lineNumber == 0 && (line.startsWith("{") || line.startsWith("["))) {
+               isYaml = false;
+            }
+            contentBuilder.append(line).append("\n");
+            lineNumber++;
+         }
+
+         artifact.content = contentBuilder.toString();
+      } catch (Exception e) {
+         logger.error("Error reading artifact file", e);
+         throw new ReshaprArtifactException("Error reading artifact file: " + e.getMessage(), e);
+      }
+
+      // Find the appropriate ObjectMapper.
+      ObjectMapper mapper = isYaml ? ObjectMapperFactory.getYamlObjectMapper() : ObjectMapperFactory.getJsonObjectMapper();
+      JsonNode artifactNode;
+      try {
+         artifactNode = mapper.readTree(artifact.content);
+      } catch (Exception e) {
+         logger.error("Error parsing artifact content", e);
+         throw new ReshaprArtifactException("Error parsing artifact content: " + e.getMessage(), e);
+      }
+
+      // Checking for required fields: apiVersion and kind.
+      String apiVersion = artifactNode.path("apiVersion").asText();
+      String kind = artifactNode.path("kind").asText();
+      if (apiVersion.isBlank() || kind.isBlank()) {
+         throw new ReshaprArtifactException("Artifact is missing required 'apiVersion' and/or 'kind' fields");
+      }
+
+      // Check if we support these kind and version.
+      if (!KIND_VERSIONS_SCHEMAS.containsKey(kind + "-" + apiVersion)) {
+         throw new ReshaprArtifactException("Unsupported artifact kind and version: " + kind + " - " + apiVersion);
+      }
+
+      // Now validate against the schema.
+      boolean isValid = false;
+      try {
+         isValid = isJsonValid(KIND_VERSIONS_SCHEMAS.get(kind + "-" + apiVersion), artifactNode);
+      } catch (Exception e) {
+         logger.error("Error validating artifact content against schema", e);
+         throw new ReshaprArtifactException("Error validating artifact content against schema: " + e.getMessage(), e);
+      }
+      if (!isValid) {
+         throw new ReshaprArtifactException("Artifact content is not valid against schema for kind '" + kind +
+               "' and version '" + apiVersion + "'");
+      }
+
+      // Set the type from the kind-version map.
+      artifact.type = KIND_VERSIONS_TYPES.get(kind + "-" + apiVersion);
+
+      // Finally, extract service name and version to populate Artifact.
+      JsonNode serviceNode = artifactNode.get("service");
+
+      return new ArtifactWithServiceRef(artifact, serviceNode.get("name").asText(),
+            serviceNode.get("version").asText());
+   }
+
+   /** Validate the jsonNode against the JSON schema located as schemaResource. */
+   private static boolean isJsonValid(String schemaResource, JsonNode jsonNode) throws Exception {
+      String schemaContent = getSchemaResourceAsString(schemaResource);
+      final JsonSchema jsonSchemaNode = extractJsonSchemaNode(SCHEMA_MAPPER.readTree(schemaContent), null);
+
+      Set<ValidationMessage> messages = jsonSchemaNode.validate(jsonNode, executionContext -> {
+         executionContext.getExecutionConfig().setFormatAssertionsEnabled(true);
+         executionContext.getExecutionConfig().setLocale(Locale.US);
+      });
+
+      if (!messages.isEmpty()) {
+         for (ValidationMessage message : messages) {
+            logger.error("Schema validation error: " + message.getMessage());
+         }
+      }
+
+      return messages.isEmpty();
+   }
+
+   /** Load schema resource content as string. */
+   private static String getSchemaResourceAsString(String schemaResource) throws Exception {
+      try (InputStream is = ReshaprArtifactBuilder.class.getResourceAsStream(schemaResource)) {
+         if (is == null) {
+            throw new Exception("Schema resource not found: " + schemaResource);
+         }
+         try (Reader reader = new InputStreamReader(is);
+              BufferedReader bufferedReader = new BufferedReader(reader)) {
+            return bufferedReader.lines().collect(Collectors.joining(System.lineSeparator()));
+         }
+      }
+   }
+
+   /** Extract a JsonSchema node from a JsonNode, possibly using a namespace as base URI. */
+   private static JsonSchema extractJsonSchemaNode(JsonNode jsonNode, String namespace) {
+      JsonMetaSchema jsonMetaSchema = JsonMetaSchema.builder(JsonMetaSchema.getV202012()).build();
+      JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012,
+            builder -> builder.metaSchema(jsonMetaSchema));
+
+      if (namespace != null) {
+         URI baseUri = URI.create(namespace);
+         return jsonSchemaFactory.getSchema(baseUri, jsonNode);
+      }
+
+      return jsonSchemaFactory.getSchema(jsonNode);
+   }
+}

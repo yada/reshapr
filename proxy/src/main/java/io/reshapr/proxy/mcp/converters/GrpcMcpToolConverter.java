@@ -23,8 +23,7 @@ import io.reshapr.proxy.registry.ArtifactEntry;
 import io.reshapr.proxy.registry.ConfigurationEntry;
 import io.reshapr.proxy.registry.OperationEntry;
 import io.reshapr.proxy.registry.ServiceEntry;
-
-import io.github.microcks.util.grpc.GrpcUtil;
+import io.reshapr.proxy.util.GrpcUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -43,11 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.github.microcks.util.JsonSchemaValidator.JSON_SCHEMA_ADD_PROPERTIES_ELEMENT;
-import static io.github.microcks.util.JsonSchemaValidator.JSON_SCHEMA_ITEMS_ELEMENT;
-import static io.github.microcks.util.JsonSchemaValidator.JSON_SCHEMA_PROPERTIES_ELEMENT;
-import static io.github.microcks.util.JsonSchemaValidator.JSON_SCHEMA_REQUIRED_ELEMENT;
-
+import static io.reshapr.json.JsonSchemaElements.*;
 /**
  * Implementation of McpToolConverter for Grpc services.
  * @author laurent

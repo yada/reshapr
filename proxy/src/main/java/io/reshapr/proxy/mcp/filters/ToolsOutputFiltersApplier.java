@@ -15,12 +15,11 @@
  */
 package io.reshapr.proxy.mcp.filters;
 
+import io.reshapr.json.ObjectMapperFactory;
 import io.reshapr.proxy.mcp.WorkCache;
 import io.reshapr.proxy.registry.ArtifactEntry;
 import io.reshapr.proxy.registry.ArtifactEntryType;
 import io.reshapr.proxy.registry.ServiceEntry;
-
-import io.github.microcks.util.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

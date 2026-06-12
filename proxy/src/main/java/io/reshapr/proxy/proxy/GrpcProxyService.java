@@ -21,8 +21,6 @@ import io.reshapr.proxy.registry.ConfigurationEntry;
 import io.reshapr.proxy.registry.SecretEntry;
 import io.reshapr.proxy.security.TokenCallCredentials;
 
-import io.github.microcks.util.grpc.GrpcUtil;
-
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -46,6 +44,7 @@ import io.grpc.stub.ClientCalls;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.reshapr.proxy.util.GrpcUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;

@@ -15,7 +15,7 @@
  */
 package io.reshapr.config;
 
-import io.github.microcks.util.ObjectMapperFactory;
+import io.reshapr.json.ObjectMapperFactory;
 
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
