@@ -96,7 +96,7 @@ public class ProxyService {
       if (logger.isDebugEnabled()) {
          logger.debugf("Proxy request url: '%s'", externalUrl);
          logger.debugf("Proxy request headers: '%s'", requestHeaders);
-         logger.debugf("Proxy request body: '%s'", body);
+         logger.tracef("Proxy request body: '%s'", body);
       }
 
       try {
@@ -106,7 +106,7 @@ public class ProxyService {
          if (logger.isDebugEnabled()) {
             logger.debugf("Proxy returned: '%s'", response.statusCode());
             logger.debugf("Proxy response headers: '%s'", response.headers());
-            logger.debugf("Proxy response body: '%s'", new String(response.body(), StandardCharsets.UTF_8));
+            logger.tracef("Proxy response body: '%s'", new String(response.body(), StandardCharsets.UTF_8));
          }
 
          // If authorization failed, it can be because of a bad elicitation secret value. We need to evict it.
