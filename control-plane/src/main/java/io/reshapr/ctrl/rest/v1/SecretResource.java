@@ -62,7 +62,9 @@ public class SecretResource {
    public List<SecretDTO> getSecrets(@QueryParam("page") @DefaultValue("0") int page,
          @QueryParam("size") @DefaultValue("20") int size) {
       return secretRepository.findAll(Sort.ascending("name")).page(Page.of(page, size))
-            .project(SecretDTO.class).list();
+            .list().stream()
+            .map(v1Mappers::toResource)
+            .toList();
    }
 
    @GET
