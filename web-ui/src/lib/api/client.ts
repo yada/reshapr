@@ -52,6 +52,11 @@ export function apiClient() {
     listArtifactsByService: (serviceId: string) =>
       json<unknown[]>(`/api/v1/artifacts/service/${serviceId}`),
 
+    listArtifactRefsByService: (serviceId: string) =>
+      json<unknown[]>(`/api/v1/artifacts/service/${serviceId}/refs`),
+
+    getArtifact: (id: string) => json<unknown>(`/api/v1/artifacts/${id}`),
+
     importArtifactFile: async (file: File, extra?: Record<string, string>) => {
       const fd = new FormData();
       fd.append('file', file);
