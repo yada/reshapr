@@ -63,7 +63,7 @@ export async function runCli(...args: string[]): Promise<CliResult> {
   return {
     stdout: result.stdout,
     stderr: result.stderr,
-    exitCode: result.exitCode,
+    exitCode: result.exitCode ?? 1,
   };
 }
 
@@ -84,3 +84,31 @@ export async function runCliExpectSuccess(...args: string[]): Promise<CliResult>
   return result;
 }
 
+export async function runCliJson<T = unknown>(...args: string[]): Promise<T> {
+  const result = await runCliExpectSuccess(...args);
+  const output = result.stdout.trim();
+  if (!output) {
+    throw new Error(`CLI command did not return JSON\nargs: ${args.join(' ')}`);
+  }
+
+  try {
+    return JSON.parse(output) as T;
+  } catch (error) {
+    throw new Error(
+      `CLI command returned invalid JSON\n` +
+      `args: ${args.join(' ')}\n` +
+      `stdout: ${result.stdout}\n` +
+      `error: ${(error as Error).message}`
+    );
+  }
+}
+
+export async function login(): Promise<void> {
+  await runCliExpectSuccess(
+    'login',
+    '-u', 'e2euser',
+    '-p', 'e2e-password',
+    '-s', 'http://localhost:5555',
+    '-k',
+  );
+}
