@@ -33,6 +33,10 @@ jobs:
         working-directory: cli
         run: npm run build
 
-      - name: Run E2E tests
+      - name: Run CLI E2E tests
         working-directory: cli
-        run: npm run test:e2e
+        run: npm run test:e2e:core
+
+      - name: Run UI smoke E2E test
+        working-directory: cli
+        run: npm run test:e2e:ui

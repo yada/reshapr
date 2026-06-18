@@ -21,7 +21,9 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e": "npm run test:e2e:core && npm run test:e2e:ui",
+    "test:e2e:core": "vitest run --config vitest.e2e.config.ts e2e/scenarios/import-and-expose-basic.e2e.test.ts e2e/scenarios/graphql-full.e2e.test.ts e2e/scenarios/graphql-filtered-custom-tools.e2e.test.ts e2e/scenarios/elicitation-secret.e2e.test.ts",
+    "test:e2e:ui": "RESHAPR_E2E_UI=true vitest run --config vitest.e2e.config.ts e2e/scenarios/ui-smoke.e2e.test.ts",
     "lint": "eslint src/**/*.ts"
   },
   "dependencies": {

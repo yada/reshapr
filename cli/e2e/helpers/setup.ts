@@ -17,11 +17,45 @@ import { execa } from 'execa';
 import * as path from 'node:path';
 
 const COMPOSE_FILE = path.resolve(import.meta.dirname, '../../../install/docker-compose-all-in-one.yml');
+const UI_COMPOSE_FILE = path.resolve(import.meta.dirname, '../../../install/docker-compose-ui-addon.yml');
 const CONTROL_PLANE_URL = 'http://localhost:5555';
 const GATEWAY_URL = 'http://localhost:7777';
+const UI_URL = 'http://localhost:3333';
 const ADMIN_API_KEY = 'CzBuQ9B0i8qrUQe6WLiDLqR3gv4iCbxvjTJQP0z0CFGQbjgBHPZSusa9d1gZKwwjdoCsJ8ogRwRzc06GipJSjSDkFOy0BSOKvAa2EjU3As9I5UjgizTzxsJAVJIXtdo2xiXHhcry9KeJa0zRhDtGmm8WMujoXrlfj0ChlJKaHZiZsRthd4UHrWkKur9KySXpPFP21H4C0Cq6OgM1rJpvMZ7Jd2ZzeEcd5lKE4PlchHZBVEdu8jYzjQtU50fkOPoR';
 
-export { CONTROL_PLANE_URL, GATEWAY_URL, ADMIN_API_KEY };
+export { CONTROL_PLANE_URL, GATEWAY_URL, UI_URL, ADMIN_API_KEY };
+
+function isTrue(value: string | undefined): boolean {
+  return value === 'true' || value === '1' || value === 'yes';
+}
+
+function shouldRecreateStack(): boolean {
+  return process.env.RESHAPR_E2E_RECREATE_STACK === undefined || isTrue(process.env.RESHAPR_E2E_RECREATE_STACK);
+}
+
+function composeArgs(...args: string[]): string[] {
+  const files = [COMPOSE_FILE];
+  if (isTrue(process.env.RESHAPR_E2E_UI)) {
+    files.push(UI_COMPOSE_FILE);
+  }
+
+  return [...files.flatMap(file => ['-f', file]), ...args];
+}
+
+async function recreateStackIfRequested(): Promise<void> {
+  if (!shouldRecreateStack()) {
+    return;
+  }
+
+  await execa('docker', ['compose', ...composeArgs('down', '-v')], {
+    stdio: 'inherit',
+    reject: false,
+  });
+  await execa('docker', ['rm', '-f', 'reshapr-postgres', 'reshapr-control-plane', 'reshapr-gateway-01', 'reshapr-web-ui'], {
+    stdio: 'ignore',
+    reject: false,
+  });
+}
 
 /**
  * Poll a URL until it returns HTTP 200, with retries.
@@ -104,7 +138,8 @@ async function provisionTestUser(): Promise<void> {
 
 export async function startInfrastructure(): Promise<void> {
   console.log('🚀 Starting infrastructure via Docker Compose...');
-  await execa('docker', ['compose', '-f', COMPOSE_FILE, 'up', '-d', '--wait'], {
+  await recreateStackIfRequested();
+  await execa('docker', ['compose', ...composeArgs('up', '-d', '--wait')], {
     stdio: 'inherit',
   });
 
@@ -118,9 +153,8 @@ export async function startInfrastructure(): Promise<void> {
 
 export async function stopInfrastructure(): Promise<void> {
   console.log('🛑 Stopping infrastructure...');
-  await execa('docker', ['compose', '-f', COMPOSE_FILE, 'down', '-v'], {
+  await execa('docker', ['compose', ...composeArgs('down', '-v')], {
     stdio: 'inherit',
   });
   console.log('✅ Infrastructure stopped.');
 }
-
