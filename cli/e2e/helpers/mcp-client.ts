@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import { GATEWAY_URL } from './setup.js';
-import { E2E_ORG } from './fixtures.js';
 
 export interface McpTool {
   name: string;
@@ -39,6 +38,7 @@ interface ToolExpectation {
 }
 
 const MCP_PROTOCOL_VERSION = '2025-06-18';
+const E2E_ORG = 'e2eorg';
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));

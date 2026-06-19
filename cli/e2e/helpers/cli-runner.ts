@@ -85,10 +85,11 @@ export async function runCliExpectSuccess(...args: string[]): Promise<CliResult>
 }
 
 export async function runCliJson<T = unknown>(...args: string[]): Promise<T> {
-  const result = await runCliExpectSuccess(...args);
+  const jsonArgs = [...args, '-o', 'json'];
+  const result = await runCliExpectSuccess(...jsonArgs);
   const output = result.stdout.trim();
   if (!output) {
-    throw new Error(`CLI command did not return JSON\nargs: ${args.join(' ')}`);
+    throw new Error(`CLI command did not return JSON\nargs: ${jsonArgs.join(' ')}`);
   }
 
   try {
@@ -96,7 +97,7 @@ export async function runCliJson<T = unknown>(...args: string[]): Promise<T> {
   } catch (error) {
     throw new Error(
       `CLI command returned invalid JSON\n` +
-      `args: ${args.join(' ')}\n` +
+      `args: ${jsonArgs.join(' ')}\n` +
       `stdout: ${result.stdout}\n` +
       `error: ${(error as Error).message}`
     );

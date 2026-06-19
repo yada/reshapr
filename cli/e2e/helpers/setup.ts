@@ -23,29 +23,6 @@ const ADMIN_API_KEY = 'CzBuQ9B0i8qrUQe6WLiDLqR3gv4iCbxvjTJQP0z0CFGQbjgBHPZSusa9d
 
 export { CONTROL_PLANE_URL, GATEWAY_URL, ADMIN_API_KEY };
 
-function isTrue(value: string | undefined): boolean {
-  return value === 'true' || value === '1' || value === 'yes';
-}
-
-function shouldRecreateStack(): boolean {
-  return process.env.RESHAPR_E2E_RECREATE_STACK === undefined || isTrue(process.env.RESHAPR_E2E_RECREATE_STACK);
-}
-
-async function recreateStackIfRequested(): Promise<void> {
-  if (!shouldRecreateStack()) {
-    return;
-  }
-
-  await execa('docker', ['compose', '-f', COMPOSE_FILE, 'down', '-v'], {
-    stdio: 'inherit',
-    reject: false,
-  });
-  await execa('docker', ['rm', '-f', 'reshapr-postgres', 'reshapr-control-plane', 'reshapr-gateway-01'], {
-    stdio: 'ignore',
-    reject: false,
-  });
-}
-
 /**
  * Poll a URL until it returns HTTP 200, with retries.
  */
@@ -127,7 +104,6 @@ async function provisionTestUser(): Promise<void> {
 
 export async function startInfrastructure(): Promise<void> {
   console.log('🚀 Starting infrastructure via Docker Compose...');
-  await recreateStackIfRequested();
   await execa('docker', ['compose', '-f', COMPOSE_FILE, 'up', '-d', '--wait'], {
     stdio: 'inherit',
   });
