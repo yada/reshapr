@@ -66,10 +66,10 @@ reshapr run
 
 You should see a message like this:
 ```sh
-ℹ️  Resolved 'latest' to release '0.0.13'.
-ℹ️  Downloading compose file from https://raw.githubusercontent.com/reshaprio/reshapr/refs/tags/0.0.13/install/docker-compose-all-in-one.yml...
-✅ Compose file saved to /Users/<you>/.reshapr/docker-compose-0.0.13.yml
-ℹ️  Starting Reshapr containers (release: 0.0.13)...
+ℹ️  Resolved 'latest' to release '0.0.14'.
+ℹ️  Downloading compose file from https://raw.githubusercontent.com/reshaprio/reshapr/refs/tags/0.0.14/install/docker-compose-all-in-one.yml...
+✅ Compose file saved to /Users/<you>/.reshapr/docker-compose-0.0.14.yml
+ℹ️  Starting Reshapr containers (release: 0.0.14)...
 ✅ Reshapr containers started successfully.
 ```
 
