@@ -333,7 +333,7 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "http://localhost:5555/*"
+        "http://localhost:7777/*"
       ],
       "webOrigins": [
         "+"
